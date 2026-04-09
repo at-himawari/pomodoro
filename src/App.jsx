@@ -35,6 +35,8 @@ const formatTime = (seconds) => {
   return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
 }
 
+const MENU_HIDE_DELAY = 2500
+
 function App() {
   const [durations, setDurations] = useState({ focus: 25, break: 5 })
   const [mode, setMode] = useState('focus')
@@ -43,8 +45,11 @@ function App() {
   const [completedSessions, setCompletedSessions] = useState(0)
   const [audioEnabled, setAudioEnabled] = useState(true)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [showMenu, setShowMenu] = useState(true)
+  const [alwaysShowMenu, setAlwaysShowMenu] = useState(false)
 
   const audioContextRef = useRef(null)
+  const hideMenuTimeoutRef = useRef(null)
 
   const totalSeconds = durations[mode] * 60
   const progress = totalSeconds === 0 ? 0 : secondsLeft / totalSeconds
@@ -52,6 +57,28 @@ function App() {
   const circumference = 2 * Math.PI * circleRadius
   const strokeOffset = circumference * (1 - progress)
   const activeMode = MODES[mode]
+  const menuVisible = alwaysShowMenu || showMenu
+
+  const scheduleMenuHide = useCallback(() => {
+    if (alwaysShowMenu) {
+      return
+    }
+
+    if (hideMenuTimeoutRef.current) {
+      window.clearTimeout(hideMenuTimeoutRef.current)
+    }
+
+    hideMenuTimeoutRef.current = window.setTimeout(() => {
+      if (!settingsOpen) {
+        setShowMenu(false)
+      }
+    }, MENU_HIDE_DELAY)
+  }, [alwaysShowMenu, settingsOpen])
+
+  const revealMenu = useCallback(() => {
+    setShowMenu(true)
+    scheduleMenuHide()
+  }, [scheduleMenuHide])
 
   const ensureAudioContext = useCallback(async () => {
     if (typeof window === 'undefined' || !audioEnabled) {
@@ -137,6 +164,44 @@ function App() {
     })
   }, [durations, mode, playTransitionSound, secondsLeft])
 
+  useEffect(() => {
+    if (alwaysShowMenu) {
+      if (hideMenuTimeoutRef.current) {
+        window.clearTimeout(hideMenuTimeoutRef.current)
+      }
+      return undefined
+    }
+
+    if (settingsOpen) {
+      if (hideMenuTimeoutRef.current) {
+        window.clearTimeout(hideMenuTimeoutRef.current)
+      }
+      return undefined
+    }
+
+    scheduleMenuHide()
+
+    const events = ['pointermove', 'pointerdown', 'touchstart', 'keydown', 'focusin']
+    const handleActivity = () => {
+      setShowMenu(true)
+      scheduleMenuHide()
+    }
+
+    events.forEach((eventName) => {
+      window.addEventListener(eventName, handleActivity, { passive: true })
+    })
+
+    return () => {
+      events.forEach((eventName) => {
+        window.removeEventListener(eventName, handleActivity)
+      })
+
+      if (hideMenuTimeoutRef.current) {
+        window.clearTimeout(hideMenuTimeoutRef.current)
+      }
+    }
+  }, [alwaysShowMenu, scheduleMenuHide, settingsOpen])
+
   const syncDuration = (targetMode, rawValue) => {
     const nextMinutes = clampMinutes(rawValue, durations[targetMode])
 
@@ -151,6 +216,7 @@ function App() {
   }
 
   const switchMode = (nextMode) => {
+    revealMenu()
     setMode(nextMode)
     setIsRunning(false)
     setSecondsLeft(durations[nextMode] * 60)
@@ -158,11 +224,13 @@ function App() {
 
   const toggleTimer = async () => {
     await ensureAudioContext()
+    revealMenu()
     setIsRunning((currentValue) => !currentValue)
   }
 
   const resetTimer = async () => {
     await ensureAudioContext()
+    revealMenu()
     setIsRunning(false)
     setMode('focus')
     setSecondsLeft(durations.focus * 60)
@@ -171,6 +239,7 @@ function App() {
 
   const skipSession = async () => {
     await ensureAudioContext()
+    revealMenu()
 
     const nextMode = mode === 'focus' ? 'break' : 'focus'
 
@@ -187,7 +256,11 @@ function App() {
   return (
     <main className={`min-h-screen px-6 py-8 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
       <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col">
-        <header className="flex items-center justify-between">
+        <header
+          className={`flex items-center justify-between transition-all duration-300 ${
+            menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
+          }`}
+        >
           <div className="flex items-center gap-3">
             <img src={logo} alt="Pomodoro logo" className="h-11 w-11 rounded-2xl" />
             <div className="flex flex-col justify-center">
@@ -199,7 +272,10 @@ function App() {
           </div>
           <button
             type="button"
-            onClick={() => setSettingsOpen((currentValue) => !currentValue)}
+            onClick={() => {
+              revealMenu()
+              setSettingsOpen((currentValue) => !currentValue)
+            }}
             className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-600 transition hover:border-stone-400 hover:text-stone-900"
           >
             Settings
@@ -207,7 +283,11 @@ function App() {
         </header>
 
         <section className="flex flex-1 flex-col items-center justify-center">
-          <div className="mb-10 flex items-center gap-2 rounded-full border border-stone-200 bg-white p-1">
+          <div
+            className={`mb-10 flex items-center gap-2 rounded-full border border-stone-200 bg-white p-1 transition-all duration-300 ${
+              menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
+            }`}
+          >
             {Object.entries(MODES).map(([key, value]) => {
               const isActive = mode === key
 
@@ -252,7 +332,11 @@ function App() {
             </div>
           </div>
 
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-3">
+          <div
+            className={`mt-10 flex flex-wrap items-center justify-center gap-3 transition-all duration-300 ${
+              menuVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 pointer-events-none'
+            }`}
+          >
             <button
               type="button"
               onClick={toggleTimer}
@@ -278,12 +362,15 @@ function App() {
         </section>
 
         {settingsOpen ? (
-          <section className={`mx-auto mt-6 w-full max-w-xl rounded-[1.5rem] border border-stone-200 p-5 shadow-[0_18px_40px_rgba(28,25,23,0.06)] transition-colors duration-700 ${activeMode.panel}`}>
+          <section className={`mx-auto mt-6 w-full max-w-xl rounded-[1.5rem] border border-stone-200 p-5 shadow-[0_18px_40px_rgba(28,25,23,0.06)] transition-all duration-300 ${activeMode.panel} ${menuVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 pointer-events-none'}`}>
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-stone-900">Settings</h2>
               <button
                 type="button"
-                onClick={() => setSettingsOpen(false)}
+                onClick={() => {
+                  revealMenu()
+                  setSettingsOpen(false)
+                }}
                 className="text-sm text-stone-400 transition hover:text-stone-700"
               >
                 Close
@@ -299,7 +386,10 @@ function App() {
                     min="1"
                     max="90"
                     value={durations[key]}
-                    onChange={(event) => syncDuration(key, event.target.value)}
+                    onChange={(event) => {
+                      revealMenu()
+                      syncDuration(key, event.target.value)
+                    }}
                     className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-400"
                   />
                 </label>
@@ -313,12 +403,34 @@ function App() {
               </div>
               <button
                 type="button"
-                onClick={() => setAudioEnabled((currentValue) => !currentValue)}
+                onClick={() => {
+                  revealMenu()
+                  setAudioEnabled((currentValue) => !currentValue)
+                }}
                 className={`rounded-full px-4 py-2 text-sm transition ${
                   audioEnabled ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
                 }`}
               >
                 {audioEnabled ? 'On' : 'Off'}
+              </button>
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-stone-900">メニュー表示</p>
+                <p className="text-sm text-stone-500">自動で隠さず、常に表示したままにします</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  revealMenu()
+                  setAlwaysShowMenu((currentValue) => !currentValue)
+                }}
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  alwaysShowMenu ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
+                }`}
+              >
+                {alwaysShowMenu ? 'Always on' : 'Auto hide'}
               </button>
             </div>
           </section>
