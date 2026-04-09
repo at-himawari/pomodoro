@@ -245,7 +245,7 @@ function App() {
 
             <div className={`flex h-[250px] w-[250px] flex-col items-center justify-center rounded-full text-center shadow-[0_18px_50px_rgba(28,25,23,0.08)] transition-colors duration-700 sm:h-[280px] sm:w-[280px] ${activeMode.panel}`}>
               <p className="text-sm uppercase tracking-[0.28em] text-stone-400">{activeMode.helper}</p>
-              <p className="mt-4 font-['Space_Grotesk',_'Noto_Sans_JP',_sans-serif] text-6xl font-medium tracking-tight sm:text-7xl">
+              <p className="mt-4 font-['Space_Grotesk',_'Noto_Sans_JP',_sans-serif] text-6xl font-medium tracking-tight tabular-nums sm:text-7xl">
                 {formatTime(secondsLeft)}
               </p>
               <p className="mt-4 text-sm text-stone-400">Completed {completedSessions}</p>
