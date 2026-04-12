@@ -50,6 +50,7 @@ function App() {
 
   const audioContextRef = useRef(null)
   const hideMenuTimeoutRef = useRef(null)
+  const lastCountdownTickRef = useRef(null)
 
   const totalSeconds = durations[mode] * 60
   const progress = totalSeconds === 0 ? 0 : secondsLeft / totalSeconds
@@ -131,6 +132,31 @@ function App() {
     })
   }, [ensureAudioContext])
 
+  const playCountdownTick = useCallback(async (remainingSeconds) => {
+    const audioContext = await ensureAudioContext()
+
+    if (!audioContext) {
+      return
+    }
+
+    const now = audioContext.currentTime
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+    const frequency = remainingSeconds === 1 ? 1046.5 : 880
+
+    oscillator.type = 'triangle'
+    oscillator.frequency.setValueAtTime(frequency, now)
+    gainNode.gain.setValueAtTime(0.0001, now)
+    gainNode.gain.exponentialRampToValueAtTime(0.16, now + 0.01)
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.11)
+
+    oscillator.connect(gainNode)
+    gainNode.connect(audioContext.destination)
+
+    oscillator.start(now)
+    oscillator.stop(now + 0.13)
+  }, [ensureAudioContext])
+
   useEffect(() => {
     if (!isRunning) {
       return undefined
@@ -163,6 +189,20 @@ function App() {
       }
     })
   }, [durations, mode, playTransitionSound, secondsLeft])
+
+  useEffect(() => {
+    if (!isRunning || secondsLeft > 5 || secondsLeft <= 0) {
+      lastCountdownTickRef.current = null
+      return
+    }
+
+    if (lastCountdownTickRef.current === secondsLeft) {
+      return
+    }
+
+    lastCountdownTickRef.current = secondsLeft
+    playCountdownTick(secondsLeft)
+  }, [isRunning, playCountdownTick, secondsLeft])
 
   useEffect(() => {
     if (alwaysShowMenu) {
