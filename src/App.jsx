@@ -57,10 +57,10 @@ function AdBanner() {
   }, [])
 
   return (
-    <div className="mx-auto mt-6 w-full max-w-[320px] rounded-[1.5rem] border border-stone-200 bg-white/80 p-3 shadow-[0_18px_40px_rgba(28,25,23,0.05)]">
+    <div className="mx-auto mt-6 w-full max-w-xl rounded-[1.5rem] border border-stone-200 bg-white/80 p-3 shadow-[0_18px_40px_rgba(28,25,23,0.05)]">
       <ins
         className="adsbygoogle"
-        style={{ display: 'block', minHeight: '140px', maxHeight: '200px', overflow: 'hidden' }}
+        style={{ display: 'block', minHeight: '96px', maxHeight: '140px', overflow: 'hidden' }}
         data-ad-client="ca-pub-6651283997191475"
         data-ad-slot="4759075102"
         data-ad-format="auto"
