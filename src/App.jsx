@@ -57,14 +57,14 @@ function AdBanner() {
   }, [])
 
   return (
-    <div className="mx-auto mt-5 w-full max-w-[460px] rounded-[1.25rem] border border-stone-200 bg-white/80 p-2 shadow-[0_18px_40px_rgba(28,25,23,0.05)]">
+    <div className="mx-auto mt-5 flex w-full justify-center">
       <ins
         className="adsbygoogle"
-        style={{ display: 'block', minHeight: '54px', maxHeight: '72px', overflow: 'hidden' }}
+        style={{ display: 'inline-block', width: '360px', height: '72px' }}
         data-ad-client="ca-pub-6651283997191475"
         data-ad-slot="4759075102"
-        data-ad-format="auto"
-        data-full-width-responsive="true"
+        data-ad-format="horizontal"
+        data-full-width-responsive="false"
       />
     </div>
   )
