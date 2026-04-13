@@ -1,16 +1,32 @@
-# React + Vite
+# Pomodoro
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+シンプルなポモドーロタイマーです。
 
-Currently, two official plugins are available:
+## Development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+## GTM / GA4
+実際のコンテナIDに差し替えると、アプリは `dataLayer` に以下のイベントを送ります。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- `page_view`
+- `pomodoro_timer_toggle`
+- `pomodoro_timer_reset`
+- `pomodoro_session_complete`
+- `pomodoro_session_skip`
+- `pomodoro_mode_switch`
+- `pomodoro_duration_change`
+- `pomodoro_settings_toggle`
+- `pomodoro_audio_toggle`
+- `pomodoro_menu_visibility_toggle`
 
-## Expanding the ESLint configuration
+GA4 への送信は GTM 側で設定してください。
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. GTM で `Google タグ` または `GA4 Configuration` タグを作成
+2. GA4 の測定IDを設定
+3. `All Pages` と必要なカスタムイベントで発火
+
+`pomodoro_*` 系のイベントは GTM のカスタムイベントトリガーで GA4 Event タグへ転送できます。

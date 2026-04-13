@@ -1,5 +1,6 @@
 import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import logo from './assets/pomodoro-logo.svg'
+import { trackEvent } from './analytics.js'
 
 const MODES = {
   focus: {
@@ -249,6 +250,12 @@ function App() {
 
       if (nextMode === 'break') {
         setCompletedSessions((currentCount) => currentCount + 1)
+        trackEvent('pomodoro_session_complete', {
+          completed_mode: mode,
+          next_mode: nextMode,
+          focus_minutes: durations.focus,
+          break_minutes: durations.break,
+        })
       }
     })
   }, [durations, mode, playTransitionSound, secondsLeft])
@@ -322,6 +329,11 @@ function App() {
     if (mode === targetMode) {
       setSecondsLeft(nextMinutes * 60)
     }
+
+    trackEvent('pomodoro_duration_change', {
+      timer_mode: targetMode,
+      duration_minutes: nextMinutes,
+    })
   }
 
   const switchMode = (nextMode) => {
@@ -331,6 +343,10 @@ function App() {
     setMode(nextMode)
     setIsRunning(false)
     setSecondsLeft(durations[nextMode] * 60)
+    trackEvent('pomodoro_mode_switch', {
+      from_mode: mode,
+      to_mode: nextMode,
+    })
   }
 
   const toggleTimer = async () => {
@@ -339,6 +355,11 @@ function App() {
     if (!isRunning && secondsLeft === 60) {
       triggerFinalMinuteBurst()
     }
+    trackEvent('pomodoro_timer_toggle', {
+      action: isRunning ? 'pause' : 'start',
+      timer_mode: mode,
+      seconds_left: secondsLeft,
+    })
     setIsRunning((currentValue) => !currentValue)
   }
 
@@ -351,6 +372,10 @@ function App() {
     setMode('focus')
     setSecondsLeft(durations.focus * 60)
     setCompletedSessions(0)
+    trackEvent('pomodoro_timer_reset', {
+      timer_mode: mode,
+      completed_sessions: completedSessions,
+    })
   }
 
   const skipSession = async () => {
@@ -365,6 +390,11 @@ function App() {
     setSecondsLeft(durations[nextMode] * 60)
     setIsRunning(false)
     playTransitionSound(nextMode)
+    trackEvent('pomodoro_session_skip', {
+      skipped_mode: mode,
+      next_mode: nextMode,
+      seconds_left: secondsLeft,
+    })
 
     if (nextMode === 'break') {
       setCompletedSessions((currentCount) => currentCount + 1)
@@ -393,6 +423,9 @@ function App() {
             onClick={() => {
               revealMenu()
               setSettingsOpen((currentValue) => !currentValue)
+              trackEvent('pomodoro_settings_toggle', {
+                is_open: !settingsOpen,
+              })
             }}
             className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-600 transition hover:border-stone-400 hover:text-stone-900"
           >
@@ -535,6 +568,9 @@ function App() {
                 onClick={() => {
                   revealMenu()
                   setSettingsOpen(false)
+                  trackEvent('pomodoro_settings_toggle', {
+                    is_open: false,
+                  })
                 }}
                 className="text-sm text-stone-400 transition hover:text-stone-700"
               >
@@ -571,6 +607,9 @@ function App() {
                 onClick={() => {
                   revealMenu()
                   setAudioEnabled((currentValue) => !currentValue)
+                  trackEvent('pomodoro_audio_toggle', {
+                    enabled: !audioEnabled,
+                  })
                 }}
                 className={`rounded-full px-4 py-2 text-sm transition ${
                   audioEnabled ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
@@ -590,6 +629,9 @@ function App() {
                 onClick={() => {
                   revealMenu()
                   setAlwaysShowMenu((currentValue) => !currentValue)
+                  trackEvent('pomodoro_menu_visibility_toggle', {
+                    always_show: !alwaysShowMenu,
+                  })
                 }}
                 className={`rounded-full px-4 py-2 text-sm transition ${
                   alwaysShowMenu ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
