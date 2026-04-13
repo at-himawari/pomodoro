@@ -372,8 +372,8 @@ function App() {
   }
 
   return (
-    <main className={`h-screen overflow-hidden px-6 py-5 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
-      <div className="mx-auto flex h-full max-w-3xl flex-col">
+    <main className={`min-h-screen px-6 py-5 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
+      <div className="mx-auto flex min-h-screen max-w-3xl flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
             menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
