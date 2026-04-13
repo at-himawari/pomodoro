@@ -60,7 +60,7 @@ function AdBanner() {
     <div className="mx-auto mt-6 w-full max-w-xl rounded-[1.5rem] border border-stone-200 bg-white/80 p-3 shadow-[0_18px_40px_rgba(28,25,23,0.05)]">
       <ins
         className="adsbygoogle"
-        style={{ display: 'block', minHeight: '96px', maxHeight: '140px', overflow: 'hidden' }}
+        style={{ display: 'block', minHeight: '72px', maxHeight: '96px', overflow: 'hidden' }}
         data-ad-client="ca-pub-6651283997191475"
         data-ad-slot="4759075102"
         data-ad-format="auto"
@@ -372,8 +372,8 @@ function App() {
   }
 
   return (
-    <main className={`min-h-screen px-6 py-8 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] max-w-3xl flex-col">
+    <main className={`h-screen overflow-hidden px-6 py-5 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
+      <div className="mx-auto flex h-full max-w-3xl flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
             menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
@@ -424,7 +424,7 @@ function App() {
             })}
           </div>
 
-          <div className="relative flex h-[340px] w-[340px] items-center justify-center sm:h-[380px] sm:w-[380px]">
+          <div className="relative flex h-[300px] w-[300px] items-center justify-center sm:h-[332px] sm:w-[332px]">
             {finalMinuteBurst ? (
               <div className="cinema-burst" aria-hidden="true">
                 <span className="cinema-particle cinema-particle-1" />
@@ -488,17 +488,17 @@ function App() {
               />
             </svg>
 
-            <div className={`flex h-[250px] w-[250px] flex-col items-center justify-center rounded-full text-center shadow-[0_18px_50px_rgba(28,25,23,0.08)] transition-colors duration-700 sm:h-[280px] sm:w-[280px] ${activeMode.panel}`}>
+            <div className={`flex h-[220px] w-[220px] flex-col items-center justify-center rounded-full text-center shadow-[0_18px_50px_rgba(28,25,23,0.08)] transition-colors duration-700 sm:h-[244px] sm:w-[244px] ${activeMode.panel}`}>
               <p className="text-sm uppercase tracking-[0.28em] text-stone-400">{activeMode.helper}</p>
-              <p className="mt-4 font-['Space_Grotesk',_'Noto_Sans_JP',_sans-serif] text-6xl font-medium tracking-tight tabular-nums sm:text-7xl">
+              <p className="mt-3 font-['Space_Grotesk',_'Noto_Sans_JP',_sans-serif] text-5xl font-medium tracking-tight tabular-nums sm:text-6xl">
                 {formatTime(secondsLeft)}
               </p>
-              <p className="mt-4 text-sm text-stone-400">Completed {completedSessions}</p>
+              <p className="mt-3 text-sm text-stone-400">Completed {completedSessions}</p>
             </div>
           </div>
 
           <div
-            className={`mt-10 flex flex-wrap items-center justify-center gap-3 transition-all duration-300 ${
+            className={`mt-7 flex flex-wrap items-center justify-center gap-3 transition-all duration-300 ${
               menuVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 pointer-events-none'
             }`}
           >
@@ -603,7 +603,7 @@ function App() {
 
         <AdBanner />
 
-        <footer className="py-4 text-center text-xs text-stone-400">
+        <footer className="pt-3 pb-2 text-center text-xs text-stone-400">
           ©︎ 2026 Himawari Project
         </footer>
       </div>
