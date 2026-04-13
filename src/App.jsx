@@ -47,10 +47,13 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showMenu, setShowMenu] = useState(true)
   const [alwaysShowMenu, setAlwaysShowMenu] = useState(false)
+  const [finalMinuteBurst, setFinalMinuteBurst] = useState(false)
 
   const audioContextRef = useRef(null)
   const hideMenuTimeoutRef = useRef(null)
   const lastCountdownTickRef = useRef(null)
+  const finalMinuteBurstTimeoutRef = useRef(null)
+  const finalMinuteBurstSessionRef = useRef(null)
 
   const totalSeconds = durations[mode] * 60
   const progress = totalSeconds === 0 ? 0 : secondsLeft / totalSeconds
@@ -157,19 +160,46 @@ function App() {
     oscillator.stop(now + 0.13)
   }, [ensureAudioContext])
 
+  const triggerFinalMinuteBurst = useCallback(() => {
+    const sessionKey = `${mode}-${totalSeconds}`
+
+    if (finalMinuteBurstSessionRef.current === sessionKey) {
+      return
+    }
+
+    finalMinuteBurstSessionRef.current = sessionKey
+    setFinalMinuteBurst(true)
+
+    if (finalMinuteBurstTimeoutRef.current) {
+      window.clearTimeout(finalMinuteBurstTimeoutRef.current)
+    }
+
+    finalMinuteBurstTimeoutRef.current = window.setTimeout(() => {
+      setFinalMinuteBurst(false)
+    }, 2200)
+  }, [mode, totalSeconds])
+
   useEffect(() => {
     if (!isRunning) {
       return undefined
     }
 
     const intervalId = window.setInterval(() => {
-      setSecondsLeft((currentSeconds) => Math.max(currentSeconds - 1, 0))
+      setSecondsLeft((currentSeconds) => {
+        const nextSeconds = Math.max(currentSeconds - 1, 0)
+
+        if (nextSeconds === 60) {
+          triggerFinalMinuteBurst()
+        }
+
+        return nextSeconds
+      })
     }, 1000)
 
     return () => {
       window.clearInterval(intervalId)
     }
-  }, [isRunning])
+  }, [isRunning, triggerFinalMinuteBurst])
 
   useEffect(() => {
     if (secondsLeft !== 0) {
@@ -203,6 +233,12 @@ function App() {
     lastCountdownTickRef.current = secondsLeft
     playCountdownTick(secondsLeft)
   }, [isRunning, playCountdownTick, secondsLeft])
+
+  useEffect(() => {
+    if (!isRunning || secondsLeft > 60) {
+      finalMinuteBurstSessionRef.current = null
+    }
+  }, [isRunning, secondsLeft])
 
   useEffect(() => {
     if (alwaysShowMenu) {
@@ -257,6 +293,8 @@ function App() {
 
   const switchMode = (nextMode) => {
     revealMenu()
+    setFinalMinuteBurst(false)
+    finalMinuteBurstSessionRef.current = null
     setMode(nextMode)
     setIsRunning(false)
     setSecondsLeft(durations[nextMode] * 60)
@@ -265,12 +303,17 @@ function App() {
   const toggleTimer = async () => {
     await ensureAudioContext()
     revealMenu()
+    if (!isRunning && secondsLeft === 60) {
+      triggerFinalMinuteBurst()
+    }
     setIsRunning((currentValue) => !currentValue)
   }
 
   const resetTimer = async () => {
     await ensureAudioContext()
     revealMenu()
+    setFinalMinuteBurst(false)
+    finalMinuteBurstSessionRef.current = null
     setIsRunning(false)
     setMode('focus')
     setSecondsLeft(durations.focus * 60)
@@ -280,6 +323,8 @@ function App() {
   const skipSession = async () => {
     await ensureAudioContext()
     revealMenu()
+    setFinalMinuteBurst(false)
+    finalMinuteBurstSessionRef.current = null
 
     const nextMode = mode === 'focus' ? 'break' : 'focus'
 
@@ -347,8 +392,55 @@ function App() {
           </div>
 
           <div className="relative flex h-[340px] w-[340px] items-center justify-center sm:h-[380px] sm:w-[380px]">
-            <svg className="absolute inset-0 h-full w-full -rotate-90" viewBox="0 0 320 320" aria-hidden="true">
+            {finalMinuteBurst ? (
+              <div className="cinema-burst" aria-hidden="true">
+                <span className="cinema-particle cinema-particle-1" />
+                <span className="cinema-particle cinema-particle-2" />
+                <span className="cinema-particle cinema-particle-3" />
+                <span className="cinema-particle cinema-particle-4" />
+                <span className="cinema-particle cinema-particle-5" />
+                <span className="cinema-particle cinema-particle-6" />
+              </div>
+            ) : null}
+            <svg className="absolute inset-[-12%] h-[124%] w-[124%] -rotate-90 overflow-visible" viewBox="0 0 320 320" aria-hidden="true">
               <circle cx="160" cy="160" r={circleRadius} fill="none" stroke="#e7e5e4" strokeWidth="12" />
+              {finalMinuteBurst ? (
+                <>
+                  <circle
+                    cx="160"
+                    cy="160"
+                    r="148"
+                    fill="none"
+                    stroke={activeMode.color}
+                    strokeOpacity="0.18"
+                    strokeWidth="4"
+                    strokeDasharray="2 12"
+                    className="cinema-countdown-orbit-burst"
+                  />
+                  <circle
+                    cx="160"
+                    cy="160"
+                    r="116"
+                    fill="none"
+                    stroke={activeMode.color}
+                    strokeOpacity="0.16"
+                    strokeWidth="5"
+                    strokeDasharray="28 18"
+                    className="cinema-countdown-orbit-reverse-burst"
+                  />
+                  <circle
+                    cx="160"
+                    cy="160"
+                    r="148"
+                    fill="none"
+                    stroke={activeMode.color}
+                    strokeWidth="8"
+                    strokeLinecap="round"
+                    strokeDasharray="64 866"
+                    className="cinema-countdown-sweep-burst"
+                  />
+                </>
+              ) : null}
               <circle
                 cx="160"
                 cy="160"
@@ -359,7 +451,7 @@ function App() {
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeOffset}
-                className="transition-[stroke-dashoffset] duration-700"
+                className={`transition-[stroke-dashoffset] duration-700 ${finalMinuteBurst ? 'countdown-ring-burst' : ''}`}
               />
             </svg>
 
