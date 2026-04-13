@@ -37,6 +37,39 @@ const formatTime = (seconds) => {
 
 const MENU_HIDE_DELAY = 2500
 
+function AdBanner() {
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    if (globalThis.__pomodoroMainAdInitialized) {
+      return
+    }
+
+    try {
+      globalThis.adsbygoogle = globalThis.adsbygoogle || []
+      globalThis.adsbygoogle.push({})
+      globalThis.__pomodoroMainAdInitialized = true
+    } catch (error) {
+      console.error('AdSense initialization failed:', error)
+    }
+  }, [])
+
+  return (
+    <div className="mx-auto mt-6 w-full max-w-xl rounded-[1.5rem] border border-stone-200 bg-white/80 p-4 shadow-[0_18px_40px_rgba(28,25,23,0.05)]">
+      <ins
+        className="adsbygoogle"
+        style={{ display: 'block' }}
+        data-ad-client="ca-pub-6651283997191475"
+        data-ad-slot="4759075102"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  )
+}
+
 function App() {
   const [durations, setDurations] = useState({ focus: 25, break: 5 })
   const [mode, setMode] = useState('focus')
@@ -567,6 +600,12 @@ function App() {
             </div>
           </section>
         ) : null}
+
+        <AdBanner />
+
+        <footer className="py-4 text-center text-xs text-stone-400">
+          ©︎ 2026 Himawari Project
+        </footer>
       </div>
     </main>
   )
