@@ -60,7 +60,7 @@ function AdBanner() {
   }, [])
 
   return (
-    <div className="mx-auto flex min-h-[72px] w-full items-center justify-center">
+    <div className="mx-auto flex min-h-[72px] w-full justify-center">
       <ins
         className="adsbygoogle"
         style={{ display: 'inline-block', width: '360px', height: '72px' }}
@@ -418,8 +418,8 @@ function App() {
   }
 
   return (
-    <main className={`flex min-h-dvh flex-col px-6 pt-5 pb-2 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
-      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
+    <main className={`relative min-h-dvh overflow-hidden px-6 pt-5 pb-36 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
+      <div className="mx-auto flex min-h-[calc(100dvh-9rem)] w-full max-w-3xl flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
             menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
@@ -658,11 +658,15 @@ function App() {
             </div>
           </section>
         ) : null}
+      </div>
 
-        <div className="mt-auto flex min-h-[110px] shrink-0 flex-col justify-end pt-3">
-          <AdBanner />
-
-          <footer className="pt-3 text-center text-xs text-stone-400">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-6 pb-3">
+        <div className="relative mx-auto w-full max-w-3xl">
+          <div className="mb-4 h-px w-full" />
+          <div className="pointer-events-auto flex justify-center">
+            <AdBanner />
+          </div>
+          <footer className="pt-3 pr-3 text-right text-xs text-stone-400">
             ©︎ 2026 Himawari Project
           </footer>
         </div>
