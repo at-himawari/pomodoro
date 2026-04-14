@@ -60,7 +60,7 @@ function AdBanner() {
   }, [])
 
   return (
-    <div className="mx-auto flex w-full justify-center">
+    <div className="mx-auto flex min-h-[72px] w-full items-center justify-center">
       <ins
         className="adsbygoogle"
         style={{ display: 'inline-block', width: '360px', height: '72px' }}
@@ -659,7 +659,7 @@ function App() {
           </section>
         ) : null}
 
-        <div className="mt-auto pt-3">
+        <div className="mt-auto flex min-h-[110px] shrink-0 flex-col justify-end pt-3">
           <AdBanner />
 
           <footer className="pt-3 text-center text-xs text-stone-400">
