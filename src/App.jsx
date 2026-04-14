@@ -8,6 +8,7 @@ const MODES = {
     helper: '作業中',
     color: '#f97316',
     background: 'bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.12),_transparent_32%),linear-gradient(180deg,_#fafaf9_0%,_#f5f5f4_100%)]',
+    surface: '#f5f5f4',
     panel: 'bg-white/92',
   },
   break: {
@@ -15,6 +16,7 @@ const MODES = {
     helper: '休憩中',
     color: '#14b8a6',
     background: 'bg-[radial-gradient(circle_at_top,_rgba(20,184,166,0.14),_transparent_34%),linear-gradient(180deg,_#f0fdfa_0%,_#ecfeff_100%)]',
+    surface: '#ecfeff',
     panel: 'bg-white/82',
   },
 }
@@ -58,7 +60,7 @@ function AdBanner() {
   }, [])
 
   return (
-    <div className="mx-auto mt-auto flex w-full justify-center pt-3">
+    <div className="mx-auto flex w-full justify-center">
       <ins
         className="adsbygoogle"
         style={{ display: 'inline-block', width: '360px', height: '72px' }}
@@ -96,6 +98,20 @@ function App() {
   const strokeOffset = circumference * (1 - progress)
   const activeMode = MODES[mode]
   const menuVisible = alwaysShowMenu || showMenu
+
+  useEffect(() => {
+    const previousHtmlBackground = document.documentElement.style.background
+    const previousBodyBackground = document.body.style.background
+    const nextBackground = activeMode.surface
+
+    document.documentElement.style.background = nextBackground
+    document.body.style.background = nextBackground
+
+    return () => {
+      document.documentElement.style.background = previousHtmlBackground
+      document.body.style.background = previousBodyBackground
+    }
+  }, [activeMode.surface])
 
   const scheduleMenuHide = useCallback(() => {
     if (alwaysShowMenu) {
@@ -402,8 +418,8 @@ function App() {
   }
 
   return (
-    <main className={`min-h-dvh px-6 pt-5 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
-      <div className="mx-auto flex min-h-[calc(100dvh-1.25rem)] max-w-3xl flex-col">
+    <main className={`flex min-h-dvh flex-col px-6 pt-5 pb-2 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
+      <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
             menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
@@ -643,11 +659,13 @@ function App() {
           </section>
         ) : null}
 
-        <AdBanner />
+        <div className="mt-auto pt-3">
+          <AdBanner />
 
-        <footer className="pt-3 pb-2 text-center text-xs text-stone-400">
-          ©︎ 2026 Himawari Project
-        </footer>
+          <footer className="pt-3 text-center text-xs text-stone-400">
+            ©︎ 2026 Himawari Project
+          </footer>
+        </div>
       </div>
     </main>
   )
