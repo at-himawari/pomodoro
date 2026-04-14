@@ -2,6 +2,9 @@ import { startTransition, useCallback, useEffect, useRef, useState } from 'react
 import logo from './assets/pomodoro-logo.svg'
 import { trackEvent } from './analytics.js'
 
+const SETTINGS_COOKIE_NAME = 'pomodoroSettings'
+const SETTINGS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+
 const MODES = {
   focus: {
     label: 'Focus',
@@ -31,6 +34,82 @@ const clampMinutes = (value, fallback) => {
   return Math.min(90, Math.max(1, Math.round(nextValue)))
 }
 
+const clampLongBreakInterval = (value, fallback = 4) => {
+  const nextValue = Number(value)
+
+  if (!Number.isFinite(nextValue)) {
+    return fallback
+  }
+
+  return Math.min(12, Math.max(2, Math.round(nextValue)))
+}
+
+const DEFAULT_SETTINGS = {
+  durations: { focus: 25, break: 5, longBreak: 15 },
+  audioEnabled: true,
+  alwaysShowMenu: false,
+  longBreakEnabled: true,
+  longBreakInterval: 4,
+}
+
+const parseSettingsCookie = () => {
+  if (typeof document === 'undefined') {
+    return DEFAULT_SETTINGS
+  }
+
+  const cookie = document.cookie
+    .split('; ')
+    .find((entry) => entry.startsWith(`${SETTINGS_COOKIE_NAME}=`))
+
+  if (!cookie) {
+    return DEFAULT_SETTINGS
+  }
+
+  try {
+    const parsed = JSON.parse(decodeURIComponent(cookie.split('=').slice(1).join('=')))
+
+    return {
+      durations: {
+        focus: clampMinutes(parsed?.durations?.focus, DEFAULT_SETTINGS.durations.focus),
+        break: clampMinutes(parsed?.durations?.break, DEFAULT_SETTINGS.durations.break),
+        longBreak: clampMinutes(parsed?.durations?.longBreak, DEFAULT_SETTINGS.durations.longBreak),
+      },
+      audioEnabled:
+        typeof parsed?.audioEnabled === 'boolean'
+          ? parsed.audioEnabled
+          : DEFAULT_SETTINGS.audioEnabled,
+      alwaysShowMenu:
+        typeof parsed?.alwaysShowMenu === 'boolean'
+          ? parsed.alwaysShowMenu
+          : DEFAULT_SETTINGS.alwaysShowMenu,
+      longBreakEnabled:
+        typeof parsed?.longBreakEnabled === 'boolean'
+          ? parsed.longBreakEnabled
+          : DEFAULT_SETTINGS.longBreakEnabled,
+      longBreakInterval: clampLongBreakInterval(
+        parsed?.longBreakInterval,
+        DEFAULT_SETTINGS.longBreakInterval,
+      ),
+    }
+  } catch (error) {
+    console.error('Failed to parse pomodoro settings cookie:', error)
+    return DEFAULT_SETTINGS
+  }
+}
+
+const writeSettingsCookie = (settings) => {
+  if (typeof document === 'undefined') {
+    return
+  }
+
+  document.cookie = [
+    `${SETTINGS_COOKIE_NAME}=${encodeURIComponent(JSON.stringify(settings))}`,
+    'Path=/',
+    `Max-Age=${SETTINGS_COOKIE_MAX_AGE}`,
+    'SameSite=Lax',
+  ].join('; ')
+}
+
 const formatTime = (seconds) => {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
@@ -39,6 +118,61 @@ const formatTime = (seconds) => {
 }
 
 const MENU_HIDE_DELAY = 2500
+function ChoiceGroup({
+  label,
+  value,
+  onSelect,
+  disabled = false,
+  suffix = '分',
+  min = 1,
+  max = 90,
+}) {
+  const handleInputChange = (nextValue) => {
+    if (nextValue === '') {
+      return
+    }
+
+    onSelect(nextValue)
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-stone-500">{label}</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onSelect(Math.max(min, value - 1))}
+          disabled={disabled || value <= min}
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 bg-white text-lg text-stone-600 transition hover:border-stone-400 hover:text-stone-900 disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-400"
+          aria-label={`${label}を1${suffix}減らす`}
+        >
+          -
+        </button>
+        <label className="flex h-11 flex-1 items-center justify-between rounded-lg border border-stone-200 bg-white px-3 text-sm text-stone-600">
+          <input
+            type="number"
+            min={min}
+            max={max}
+            value={value}
+            onChange={(event) => handleInputChange(event.target.value)}
+            disabled={disabled}
+            className="w-full bg-transparent text-stone-900 outline-none disabled:cursor-not-allowed"
+          />
+          <span className="ml-2 shrink-0 text-stone-400">{suffix}</span>
+        </label>
+        <button
+          type="button"
+          onClick={() => onSelect(Math.min(max, value + 1))}
+          disabled={disabled || value >= max}
+          className="flex h-11 w-11 items-center justify-center rounded-lg border border-stone-200 bg-white text-lg text-stone-600 transition hover:border-stone-400 hover:text-stone-900 disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-400"
+          aria-label={`${label}を1${suffix}増やす`}
+        >
+          +
+        </button>
+      </div>
+    </div>
+  )
+}
 
 function AdBanner() {
   useEffect(() => {
@@ -74,16 +208,20 @@ function AdBanner() {
 }
 
 function App() {
-  const [durations, setDurations] = useState({ focus: 25, break: 5 })
+  const [initialSettings] = useState(() => parseSettingsCookie())
+  const [durations, setDurations] = useState(initialSettings.durations)
   const [mode, setMode] = useState('focus')
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60)
+  const [secondsLeft, setSecondsLeft] = useState(initialSettings.durations.focus * 60)
   const [isRunning, setIsRunning] = useState(false)
   const [completedSessions, setCompletedSessions] = useState(0)
-  const [audioEnabled, setAudioEnabled] = useState(true)
+  const [audioEnabled, setAudioEnabled] = useState(initialSettings.audioEnabled)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [showMenu, setShowMenu] = useState(true)
-  const [alwaysShowMenu, setAlwaysShowMenu] = useState(false)
+  const [alwaysShowMenu, setAlwaysShowMenu] = useState(initialSettings.alwaysShowMenu)
   const [finalMinuteBurst, setFinalMinuteBurst] = useState(false)
+  const [longBreakEnabled, setLongBreakEnabled] = useState(initialSettings.longBreakEnabled)
+  const [longBreakInterval, setLongBreakInterval] = useState(initialSettings.longBreakInterval)
+  const [currentBreakType, setCurrentBreakType] = useState('short')
 
   const audioContextRef = useRef(null)
   const hideMenuTimeoutRef = useRef(null)
@@ -91,13 +229,50 @@ function App() {
   const finalMinuteBurstTimeoutRef = useRef(null)
   const finalMinuteBurstSessionRef = useRef(null)
 
-  const totalSeconds = durations[mode] * 60
+  const totalSeconds =
+    (mode === 'focus'
+      ? durations.focus
+      : currentBreakType === 'long'
+        ? durations.longBreak
+        : durations.break) * 60
   const progress = totalSeconds === 0 ? 0 : secondsLeft / totalSeconds
   const circleRadius = 132
   const circumference = 2 * Math.PI * circleRadius
   const strokeOffset = circumference * (1 - progress)
   const activeMode = MODES[mode]
   const menuVisible = alwaysShowMenu || showMenu
+
+  const getBreakTypeForSession = useCallback(
+    (nextCompletedSessions) => {
+      if (!longBreakEnabled) {
+        return 'short'
+      }
+
+      return nextCompletedSessions % longBreakInterval === 0 ? 'long' : 'short'
+    },
+    [longBreakEnabled, longBreakInterval],
+  )
+
+  const getDurationForMode = useCallback(
+    (targetMode, breakType = currentBreakType) => {
+      if (targetMode === 'focus') {
+        return durations.focus
+      }
+
+      return breakType === 'long' ? durations.longBreak : durations.break
+    },
+    [currentBreakType, durations],
+  )
+
+  useEffect(() => {
+    writeSettingsCookie({
+      durations,
+      audioEnabled,
+      alwaysShowMenu,
+      longBreakEnabled,
+      longBreakInterval,
+    })
+  }, [alwaysShowMenu, audioEnabled, durations, longBreakEnabled, longBreakInterval])
 
   useEffect(() => {
     const previousHtmlBackground = document.documentElement.style.background
@@ -112,6 +287,10 @@ function App() {
       document.body.style.background = previousBodyBackground
     }
   }, [activeMode.surface])
+
+  useEffect(() => {
+    document.title = `ポモドーロタイマー | ${activeMode.helper}`
+  }, [activeMode.helper])
 
   const scheduleMenuHide = useCallback(() => {
     if (alwaysShowMenu) {
@@ -257,24 +436,37 @@ function App() {
     }
 
     const nextMode = mode === 'focus' ? 'break' : 'focus'
+    const nextCompletedSessions = mode === 'focus' ? completedSessions + 1 : completedSessions
+    const nextBreakType = nextMode === 'break' ? getBreakTypeForSession(nextCompletedSessions) : 'short'
 
     startTransition(() => {
       setMode(nextMode)
-      setSecondsLeft(durations[nextMode] * 60)
+      setCurrentBreakType(nextBreakType)
+      setSecondsLeft(getDurationForMode(nextMode, nextBreakType) * 60)
       setIsRunning(true)
       playTransitionSound(nextMode)
 
       if (nextMode === 'break') {
-        setCompletedSessions((currentCount) => currentCount + 1)
+        setCompletedSessions(nextCompletedSessions)
         trackEvent('pomodoro_session_complete', {
           completed_mode: mode,
           next_mode: nextMode,
           focus_minutes: durations.focus,
           break_minutes: durations.break,
+          long_break_minutes: durations.longBreak,
+          break_type: nextBreakType,
         })
       }
     })
-  }, [durations, mode, playTransitionSound, secondsLeft])
+  }, [
+    completedSessions,
+    durations,
+    getBreakTypeForSession,
+    getDurationForMode,
+    mode,
+    playTransitionSound,
+    secondsLeft,
+  ])
 
   useEffect(() => {
     if (!isRunning || secondsLeft > 5 || secondsLeft <= 0) {
@@ -342,7 +534,12 @@ function App() {
       [targetMode]: nextMinutes,
     }))
 
-    if (mode === targetMode) {
+    if (
+      (mode === targetMode && targetMode !== 'break') ||
+      (mode === 'break' &&
+        ((targetMode === 'break' && currentBreakType === 'short') ||
+          (targetMode === 'longBreak' && currentBreakType === 'long')))
+    ) {
       setSecondsLeft(nextMinutes * 60)
     }
 
@@ -357,8 +554,11 @@ function App() {
     setFinalMinuteBurst(false)
     finalMinuteBurstSessionRef.current = null
     setMode(nextMode)
+    if (nextMode === 'focus') {
+      setCurrentBreakType('short')
+    }
     setIsRunning(false)
-    setSecondsLeft(durations[nextMode] * 60)
+    setSecondsLeft(getDurationForMode(nextMode))
     trackEvent('pomodoro_mode_switch', {
       from_mode: mode,
       to_mode: nextMode,
@@ -386,6 +586,7 @@ function App() {
     finalMinuteBurstSessionRef.current = null
     setIsRunning(false)
     setMode('focus')
+    setCurrentBreakType('short')
     setSecondsLeft(durations.focus * 60)
     setCompletedSessions(0)
     trackEvent('pomodoro_timer_reset', {
@@ -401,24 +602,30 @@ function App() {
     finalMinuteBurstSessionRef.current = null
 
     const nextMode = mode === 'focus' ? 'break' : 'focus'
+    const nextCompletedSessions = mode === 'focus' ? completedSessions + 1 : completedSessions
+    const nextBreakType = nextMode === 'break' ? getBreakTypeForSession(nextCompletedSessions) : 'short'
 
     setMode(nextMode)
-    setSecondsLeft(durations[nextMode] * 60)
+    setCurrentBreakType(nextBreakType)
+    setSecondsLeft(getDurationForMode(nextMode, nextBreakType) * 60)
     setIsRunning(false)
     playTransitionSound(nextMode)
     trackEvent('pomodoro_session_skip', {
       skipped_mode: mode,
       next_mode: nextMode,
       seconds_left: secondsLeft,
+      break_type: nextBreakType,
     })
 
     if (nextMode === 'break') {
-      setCompletedSessions((currentCount) => currentCount + 1)
+      setCompletedSessions(nextCompletedSessions)
     }
   }
 
   return (
-    <main className={`relative min-h-dvh overflow-hidden px-6 pt-5 pb-36 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
+    <main
+      className={`relative min-h-dvh overflow-x-hidden px-6 pt-5 pb-10 text-stone-900 transition-colors duration-700 ${activeMode.background}`}
+    >
       <div className="mx-auto flex min-h-[calc(100dvh-9rem)] w-full max-w-3xl flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
@@ -595,22 +802,74 @@ function App() {
             </div>
 
             <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              {Object.entries(MODES).map(([key, value]) => (
-                <label key={key} className="space-y-2 text-sm text-stone-500">
-                  <span>{value.label} minutes</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="90"
-                    value={durations[key]}
-                    onChange={(event) => {
-                      revealMenu()
-                      syncDuration(key, event.target.value)
-                    }}
-                    className="w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3 text-stone-900 outline-none transition focus:border-stone-400"
-                  />
-                </label>
-              ))}
+              <ChoiceGroup
+                label="作業時間"
+                value={durations.focus}
+                min={1}
+                max={90}
+                onSelect={(value) => {
+                  revealMenu()
+                  syncDuration('focus', value)
+                }}
+              />
+              <ChoiceGroup
+                label="休憩時間"
+                value={durations.break}
+                min={1}
+                max={90}
+                onSelect={(value) => {
+                  revealMenu()
+                  syncDuration('break', value)
+                }}
+              />
+            </div>
+
+            <div className="mt-4 flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+              <div>
+                <p className="text-sm font-medium text-stone-900">長時間休憩</p>
+                <p className="text-sm text-stone-500">一定回数ごとの休憩を長めにします</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  revealMenu()
+                  setLongBreakEnabled((currentValue) => !currentValue)
+                }}
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  longBreakEnabled ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
+                }`}
+              >
+                {longBreakEnabled ? 'On' : 'Off'}
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <ChoiceGroup
+                label="長時間休憩の分数"
+                value={durations.longBreak}
+                min={1}
+                max={90}
+                disabled={!longBreakEnabled}
+                onSelect={(value) => {
+                  revealMenu()
+                  syncDuration('longBreak', value)
+                }}
+              />
+
+              <ChoiceGroup
+                label="何回ごとに入れるか"
+                value={longBreakInterval}
+                suffix="回"
+                min={2}
+                max={12}
+                disabled={!longBreakEnabled}
+                onSelect={(value) => {
+                  revealMenu()
+                  setLongBreakInterval((currentValue) =>
+                    clampLongBreakInterval(value, currentValue),
+                  )
+                }}
+              />
             </div>
 
             <div className="mt-4 flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
@@ -660,16 +919,14 @@ function App() {
         ) : null}
       </div>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-6 pb-3">
-        <div className="relative mx-auto w-full max-w-3xl">
-          <div className="mb-4 h-px w-full" />
-          <div className="pointer-events-auto flex justify-center">
-            <AdBanner />
-          </div>
-          <footer className="pt-3 pr-3 text-center text-xs text-stone-400">
-            ©︎ 2026 Himawari Project
-          </footer>
+      <div className="mx-auto mt-8 w-full max-w-3xl px-6 pb-3 sm:mt-10">
+        <div className="mb-4 h-px w-full" />
+        <div className="flex justify-center">
+          <AdBanner />
         </div>
+        <footer className="pt-3 text-center text-xs text-stone-400">
+          ©︎ 2026 Himawari Project
+        </footer>
       </div>
     </main>
   )
