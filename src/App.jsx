@@ -643,11 +643,11 @@ function App() {
           </section>
         ) : null}
 
-        <footer className="pt-4 text-center text-xs text-stone-400">
+        <AdBanner />
+
+        <footer className="pt-3 pb-2 text-center text-xs text-stone-400">
           ©︎ 2026 Himawari Project
         </footer>
-
-        <AdBanner />
       </div>
     </main>
   )
