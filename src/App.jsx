@@ -626,7 +626,7 @@ function App() {
     <main
       className={`relative min-h-dvh overflow-x-hidden px-6 pt-5 pb-10 text-stone-900 transition-colors duration-700 ${activeMode.background}`}
     >
-      <div className="mx-auto flex min-h-[calc(100dvh-9rem)] w-full max-w-3xl flex-col">
+      <div className="mx-auto flex min-h-[calc(90dvh-9rem)] w-full max-w-3xl flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
             menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
