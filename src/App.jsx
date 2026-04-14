@@ -666,7 +666,7 @@ function App() {
           <div className="pointer-events-auto flex justify-center">
             <AdBanner />
           </div>
-          <footer className="pt-3 pr-3 text-right text-xs text-stone-400">
+          <footer className="pt-3 pr-3 text-center text-xs text-stone-400">
             ©︎ 2026 Himawari Project
           </footer>
         </div>
