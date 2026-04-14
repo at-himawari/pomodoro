@@ -58,7 +58,7 @@ function AdBanner() {
   }, [])
 
   return (
-    <div className="mx-auto mt-5 flex w-full justify-center">
+    <div className="mx-auto mt-auto flex w-full justify-center pt-3">
       <ins
         className="adsbygoogle"
         style={{ display: 'inline-block', width: '360px', height: '72px' }}
@@ -402,8 +402,8 @@ function App() {
   }
 
   return (
-    <main className={`min-h-screen px-6 py-5 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
-      <div className="mx-auto flex min-h-screen max-w-3xl flex-col">
+    <main className={`min-h-dvh px-6 pt-5 text-stone-900 transition-colors duration-700 ${activeMode.background}`}>
+      <div className="mx-auto flex min-h-[calc(100dvh-1.25rem)] max-w-3xl flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
             menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
@@ -643,11 +643,11 @@ function App() {
           </section>
         ) : null}
 
-        <AdBanner />
-
-        <footer className="pt-3 pb-2 text-center text-xs text-stone-400">
+        <footer className="pt-4 text-center text-xs text-stone-400">
           ©︎ 2026 Himawari Project
         </footer>
+
+        <AdBanner />
       </div>
     </main>
   )
