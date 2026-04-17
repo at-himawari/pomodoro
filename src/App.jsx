@@ -213,8 +213,8 @@ function AdBanner() {
   }, []);
 
   return (
-    <div className="mx-auto flex min-h-[72px] w-full justify-center">
-      <p className="text-left text-xs text-stone-400">スポンサー</p>
+    <div className="mx-auto flex w-[360px] max-w-full flex-col items-start">
+      <p className="mb-2 text-[10px] leading-none text-stone-400">スポンサー</p>
       <ins
         className="adsbygoogle"
         style={{ display: "inline-block", width: "360px", height: "72px" }}
