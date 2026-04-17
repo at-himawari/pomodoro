@@ -214,7 +214,9 @@ function AdBanner() {
 
   return (
     <div className="mx-auto flex w-[360px] max-w-full flex-col items-start">
-      <p className="mb-2 text-[10px] leading-none text-stone-400">スポンサー</p>
+      <p className="mb-2 text-[10px] leading-none text-stone-400">
+        スポンサーリンク
+      </p>
       <ins
         className="adsbygoogle"
         style={{ display: "inline-block", width: "360px", height: "72px" }}
@@ -1033,7 +1035,6 @@ function App() {
       <div className="mx-auto mt-8 w-full max-w-3xl px-6 pb-3 sm:mt-10">
         <div className="mb-4 h-px w-full" />
         <div className="flex justify-center">
-          
           <AdBanner />
         </div>
         <footer className="pt-3 text-center text-xs text-stone-400">
