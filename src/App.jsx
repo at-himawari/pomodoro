@@ -1,48 +1,56 @@
-import { startTransition, useCallback, useEffect, useRef, useState } from 'react'
-import logo from './assets/pomodoro-logo.svg'
-import { trackEvent } from './analytics.js'
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import logo from "./assets/pomodoro-logo.svg";
+import { trackEvent } from "./analytics.js";
 
-const SETTINGS_COOKIE_NAME = 'pomodoroSettings'
-const SETTINGS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365
+const SETTINGS_COOKIE_NAME = "pomodoroSettings";
+const SETTINGS_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 const MODES = {
   focus: {
-    label: 'Focus',
-    helper: '作業中',
-    color: '#f97316',
-    background: 'bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.12),_transparent_32%),linear-gradient(180deg,_#fafaf9_0%,_#f5f5f4_100%)]',
-    surface: '#f5f5f4',
-    panel: 'bg-white/92',
+    label: "Focus",
+    helper: "作業中",
+    color: "#f97316",
+    background:
+      "bg-[radial-gradient(circle_at_top,_rgba(249,115,22,0.12),_transparent_32%),linear-gradient(180deg,_#fafaf9_0%,_#f5f5f4_100%)]",
+    surface: "#f5f5f4",
+    panel: "bg-white/92",
   },
   break: {
-    label: 'Break',
-    helper: '休憩中',
-    color: '#14b8a6',
-    background: 'bg-[radial-gradient(circle_at_top,_rgba(20,184,166,0.14),_transparent_34%),linear-gradient(180deg,_#f0fdfa_0%,_#ecfeff_100%)]',
-    surface: '#ecfeff',
-    panel: 'bg-white/82',
+    label: "Break",
+    helper: "休憩中",
+    color: "#14b8a6",
+    background:
+      "bg-[radial-gradient(circle_at_top,_rgba(20,184,166,0.14),_transparent_34%),linear-gradient(180deg,_#f0fdfa_0%,_#ecfeff_100%)]",
+    surface: "#ecfeff",
+    panel: "bg-white/82",
   },
-}
+};
 
 const clampMinutes = (value, fallback) => {
-  const nextValue = Number(value)
+  const nextValue = Number(value);
 
   if (!Number.isFinite(nextValue)) {
-    return fallback
+    return fallback;
   }
 
-  return Math.min(90, Math.max(1, Math.round(nextValue)))
-}
+  return Math.min(90, Math.max(1, Math.round(nextValue)));
+};
 
 const clampLongBreakInterval = (value, fallback = 4) => {
-  const nextValue = Number(value)
+  const nextValue = Number(value);
 
   if (!Number.isFinite(nextValue)) {
-    return fallback
+    return fallback;
   }
 
-  return Math.min(12, Math.max(2, Math.round(nextValue)))
-}
+  return Math.min(12, Math.max(2, Math.round(nextValue)));
+};
 
 const DEFAULT_SETTINGS = {
   durations: { focus: 25, break: 5, longBreak: 15 },
@@ -50,90 +58,101 @@ const DEFAULT_SETTINGS = {
   alwaysShowMenu: false,
   longBreakEnabled: true,
   longBreakInterval: 4,
-}
+};
 
 const parseSettingsCookie = () => {
-  if (typeof document === 'undefined') {
-    return DEFAULT_SETTINGS
+  if (typeof document === "undefined") {
+    return DEFAULT_SETTINGS;
   }
 
   const cookie = document.cookie
-    .split('; ')
-    .find((entry) => entry.startsWith(`${SETTINGS_COOKIE_NAME}=`))
+    .split("; ")
+    .find((entry) => entry.startsWith(`${SETTINGS_COOKIE_NAME}=`));
 
   if (!cookie) {
-    return DEFAULT_SETTINGS
+    return DEFAULT_SETTINGS;
   }
 
   try {
-    const parsed = JSON.parse(decodeURIComponent(cookie.split('=').slice(1).join('=')))
+    const parsed = JSON.parse(
+      decodeURIComponent(cookie.split("=").slice(1).join("=")),
+    );
 
     return {
       durations: {
-        focus: clampMinutes(parsed?.durations?.focus, DEFAULT_SETTINGS.durations.focus),
-        break: clampMinutes(parsed?.durations?.break, DEFAULT_SETTINGS.durations.break),
-        longBreak: clampMinutes(parsed?.durations?.longBreak, DEFAULT_SETTINGS.durations.longBreak),
+        focus: clampMinutes(
+          parsed?.durations?.focus,
+          DEFAULT_SETTINGS.durations.focus,
+        ),
+        break: clampMinutes(
+          parsed?.durations?.break,
+          DEFAULT_SETTINGS.durations.break,
+        ),
+        longBreak: clampMinutes(
+          parsed?.durations?.longBreak,
+          DEFAULT_SETTINGS.durations.longBreak,
+        ),
       },
       audioEnabled:
-        typeof parsed?.audioEnabled === 'boolean'
+        typeof parsed?.audioEnabled === "boolean"
           ? parsed.audioEnabled
           : DEFAULT_SETTINGS.audioEnabled,
       alwaysShowMenu:
-        typeof parsed?.alwaysShowMenu === 'boolean'
+        typeof parsed?.alwaysShowMenu === "boolean"
           ? parsed.alwaysShowMenu
           : DEFAULT_SETTINGS.alwaysShowMenu,
       longBreakEnabled:
-        typeof parsed?.longBreakEnabled === 'boolean'
+        typeof parsed?.longBreakEnabled === "boolean"
           ? parsed.longBreakEnabled
           : DEFAULT_SETTINGS.longBreakEnabled,
       longBreakInterval: clampLongBreakInterval(
         parsed?.longBreakInterval,
         DEFAULT_SETTINGS.longBreakInterval,
       ),
-    }
+    };
   } catch (error) {
-    console.error('Failed to parse pomodoro settings cookie:', error)
-    return DEFAULT_SETTINGS
+    console.error("Failed to parse pomodoro settings cookie:", error);
+    return DEFAULT_SETTINGS;
   }
-}
+};
 
 const writeSettingsCookie = (settings) => {
-  if (typeof document === 'undefined') {
-    return
+  if (typeof document === "undefined") {
+    return;
   }
 
   document.cookie = [
     `${SETTINGS_COOKIE_NAME}=${encodeURIComponent(JSON.stringify(settings))}`,
-    'Path=/',
+    "Path=/",
     `Max-Age=${SETTINGS_COOKIE_MAX_AGE}`,
-    'SameSite=Lax',
-  ].join('; ')
-}
+    "SameSite=Lax",
+  ].join("; ");
+};
 
 const formatTime = (seconds) => {
-  const minutes = Math.floor(seconds / 60)
-  const remainingSeconds = seconds % 60
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
 
-  return `${String(minutes).padStart(2, '0')}:${String(remainingSeconds).padStart(2, '0')}`
-}
+  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`;
+};
 
-const MENU_HIDE_DELAY = 2500
+const MENU_HIDE_DELAY = 2500;
 function ChoiceGroup({
   label,
   value,
   onSelect,
   disabled = false,
-  suffix = '分',
+  suffix = "分",
   min = 1,
   max = 90,
 }) {
   const handleInputChange = (nextValue) => {
-    if (nextValue === '') {
-      return
+    if (nextValue === "") {
+      return;
     }
 
-    onSelect(nextValue)
-  }
+    onSelect(nextValue);
+  };
 
   return (
     <div className="space-y-2">
@@ -171,98 +190,109 @@ function ChoiceGroup({
         </button>
       </div>
     </div>
-  )
+  );
 }
 
 function AdBanner() {
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
+    if (typeof window === "undefined") {
+      return;
     }
 
     if (globalThis.__pomodoroMainAdInitialized) {
-      return
+      return;
     }
 
     try {
-      globalThis.adsbygoogle = globalThis.adsbygoogle || []
-      globalThis.adsbygoogle.push({})
-      globalThis.__pomodoroMainAdInitialized = true
+      globalThis.adsbygoogle = globalThis.adsbygoogle || [];
+      globalThis.adsbygoogle.push({});
+      globalThis.__pomodoroMainAdInitialized = true;
     } catch (error) {
-      console.error('AdSense initialization failed:', error)
+      console.error("AdSense initialization failed:", error);
     }
-  }, [])
+  }, []);
 
   return (
     <div className="mx-auto flex min-h-[72px] w-full justify-center">
+      <p className="text-left text-xs text-stone-400">スポンサー</p>
       <ins
         className="adsbygoogle"
-        style={{ display: 'inline-block', width: '360px', height: '72px' }}
+        style={{ display: "inline-block", width: "360px", height: "72px" }}
         data-ad-client="ca-pub-6651283997191475"
         data-ad-slot="4759075102"
         data-ad-format="horizontal"
         data-full-width-responsive="false"
       />
     </div>
-  )
+  );
 }
 
 function App() {
-  const [initialSettings] = useState(() => parseSettingsCookie())
-  const [durations, setDurations] = useState(initialSettings.durations)
-  const [mode, setMode] = useState('focus')
-  const [secondsLeft, setSecondsLeft] = useState(initialSettings.durations.focus * 60)
-  const [isRunning, setIsRunning] = useState(false)
-  const [completedSessions, setCompletedSessions] = useState(0)
-  const [audioEnabled, setAudioEnabled] = useState(initialSettings.audioEnabled)
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const [showMenu, setShowMenu] = useState(true)
-  const [alwaysShowMenu, setAlwaysShowMenu] = useState(initialSettings.alwaysShowMenu)
-  const [finalMinuteBurst, setFinalMinuteBurst] = useState(false)
-  const [longBreakEnabled, setLongBreakEnabled] = useState(initialSettings.longBreakEnabled)
-  const [longBreakInterval, setLongBreakInterval] = useState(initialSettings.longBreakInterval)
-  const [currentBreakType, setCurrentBreakType] = useState('short')
+  const [initialSettings] = useState(() => parseSettingsCookie());
+  const [durations, setDurations] = useState(initialSettings.durations);
+  const [mode, setMode] = useState("focus");
+  const [secondsLeft, setSecondsLeft] = useState(
+    initialSettings.durations.focus * 60,
+  );
+  const [isRunning, setIsRunning] = useState(false);
+  const [completedSessions, setCompletedSessions] = useState(0);
+  const [audioEnabled, setAudioEnabled] = useState(
+    initialSettings.audioEnabled,
+  );
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [showMenu, setShowMenu] = useState(true);
+  const [alwaysShowMenu, setAlwaysShowMenu] = useState(
+    initialSettings.alwaysShowMenu,
+  );
+  const [finalMinuteBurst, setFinalMinuteBurst] = useState(false);
+  const [longBreakEnabled, setLongBreakEnabled] = useState(
+    initialSettings.longBreakEnabled,
+  );
+  const [longBreakInterval, setLongBreakInterval] = useState(
+    initialSettings.longBreakInterval,
+  );
+  const [currentBreakType, setCurrentBreakType] = useState("short");
 
-  const audioContextRef = useRef(null)
-  const hideMenuTimeoutRef = useRef(null)
-  const lastCountdownTickRef = useRef(null)
-  const finalMinuteBurstTimeoutRef = useRef(null)
-  const finalMinuteBurstSessionRef = useRef(null)
+  const audioContextRef = useRef(null);
+  const hideMenuTimeoutRef = useRef(null);
+  const lastCountdownTickRef = useRef(null);
+  const finalMinuteBurstTimeoutRef = useRef(null);
+  const finalMinuteBurstSessionRef = useRef(null);
 
   const totalSeconds =
-    (mode === 'focus'
+    (mode === "focus"
       ? durations.focus
-      : currentBreakType === 'long'
+      : currentBreakType === "long"
         ? durations.longBreak
-        : durations.break) * 60
-  const progress = totalSeconds === 0 ? 0 : secondsLeft / totalSeconds
-  const circleRadius = 132
-  const circumference = 2 * Math.PI * circleRadius
-  const strokeOffset = circumference * (1 - progress)
-  const activeMode = MODES[mode]
-  const menuVisible = alwaysShowMenu || showMenu
+        : durations.break) * 60;
+  const progress = totalSeconds === 0 ? 0 : secondsLeft / totalSeconds;
+  const circleRadius = 132;
+  const circumference = 2 * Math.PI * circleRadius;
+  const strokeOffset = circumference * (1 - progress);
+  const activeMode = MODES[mode];
+  const menuVisible = alwaysShowMenu || showMenu;
 
   const getBreakTypeForSession = useCallback(
     (nextCompletedSessions) => {
       if (!longBreakEnabled) {
-        return 'short'
+        return "short";
       }
 
-      return nextCompletedSessions % longBreakInterval === 0 ? 'long' : 'short'
+      return nextCompletedSessions % longBreakInterval === 0 ? "long" : "short";
     },
     [longBreakEnabled, longBreakInterval],
-  )
+  );
 
   const getDurationForMode = useCallback(
     (targetMode, breakType = currentBreakType) => {
-      if (targetMode === 'focus') {
-        return durations.focus
+      if (targetMode === "focus") {
+        return durations.focus;
       }
 
-      return breakType === 'long' ? durations.longBreak : durations.break
+      return breakType === "long" ? durations.longBreak : durations.break;
     },
     [currentBreakType, durations],
-  )
+  );
 
   useEffect(() => {
     writeSettingsCookie({
@@ -271,193 +301,217 @@ function App() {
       alwaysShowMenu,
       longBreakEnabled,
       longBreakInterval,
-    })
-  }, [alwaysShowMenu, audioEnabled, durations, longBreakEnabled, longBreakInterval])
+    });
+  }, [
+    alwaysShowMenu,
+    audioEnabled,
+    durations,
+    longBreakEnabled,
+    longBreakInterval,
+  ]);
 
   useEffect(() => {
-    const previousHtmlBackground = document.documentElement.style.background
-    const previousBodyBackground = document.body.style.background
-    const nextBackground = activeMode.surface
+    const previousHtmlBackground = document.documentElement.style.background;
+    const previousBodyBackground = document.body.style.background;
+    const nextBackground = activeMode.surface;
 
-    document.documentElement.style.background = nextBackground
-    document.body.style.background = nextBackground
+    document.documentElement.style.background = nextBackground;
+    document.body.style.background = nextBackground;
 
     return () => {
-      document.documentElement.style.background = previousHtmlBackground
-      document.body.style.background = previousBodyBackground
-    }
-  }, [activeMode.surface])
+      document.documentElement.style.background = previousHtmlBackground;
+      document.body.style.background = previousBodyBackground;
+    };
+  }, [activeMode.surface]);
 
   useEffect(() => {
-    document.title = `ポモドーロタイマー | ${activeMode.helper}`
-  }, [activeMode.helper])
+    document.title = `ポモドーロタイマー | ${activeMode.helper}`;
+  }, [activeMode.helper]);
 
   const scheduleMenuHide = useCallback(() => {
     if (alwaysShowMenu) {
-      return
+      return;
     }
 
     if (hideMenuTimeoutRef.current) {
-      window.clearTimeout(hideMenuTimeoutRef.current)
+      window.clearTimeout(hideMenuTimeoutRef.current);
     }
 
     hideMenuTimeoutRef.current = window.setTimeout(() => {
       if (!settingsOpen) {
-        setShowMenu(false)
+        setShowMenu(false);
       }
-    }, MENU_HIDE_DELAY)
-  }, [alwaysShowMenu, settingsOpen])
+    }, MENU_HIDE_DELAY);
+  }, [alwaysShowMenu, settingsOpen]);
 
   const revealMenu = useCallback(() => {
-    setShowMenu(true)
-    scheduleMenuHide()
-  }, [scheduleMenuHide])
+    setShowMenu(true);
+    scheduleMenuHide();
+  }, [scheduleMenuHide]);
 
   const ensureAudioContext = useCallback(async () => {
-    if (typeof window === 'undefined' || !audioEnabled) {
-      return null
+    if (typeof window === "undefined" || !audioEnabled) {
+      return null;
     }
 
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
 
     if (!AudioContextClass) {
-      return null
+      return null;
     }
 
     if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContextClass()
+      audioContextRef.current = new AudioContextClass();
     }
 
-    if (audioContextRef.current.state === 'suspended') {
-      await audioContextRef.current.resume()
+    if (audioContextRef.current.state === "suspended") {
+      await audioContextRef.current.resume();
     }
 
-    return audioContextRef.current
-  }, [audioEnabled])
+    return audioContextRef.current;
+  }, [audioEnabled]);
 
-  const playTransitionSound = useCallback(async (nextMode) => {
-    const audioContext = await ensureAudioContext()
+  const playTransitionSound = useCallback(
+    async (nextMode) => {
+      const audioContext = await ensureAudioContext();
 
-    if (!audioContext) {
-      return
-    }
+      if (!audioContext) {
+        return;
+      }
 
-    const now = audioContext.currentTime
-    const notes =
-      nextMode === 'break' ? [523.25, 659.25, 783.99] : [392.0, 493.88, 659.25]
+      const now = audioContext.currentTime;
+      const notes =
+        nextMode === "break"
+          ? [523.25, 659.25, 783.99]
+          : [392.0, 493.88, 659.25];
 
-    notes.forEach((frequency, index) => {
-      const oscillator = audioContext.createOscillator()
-      const gainNode = audioContext.createGain()
+      notes.forEach((frequency, index) => {
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
 
-      oscillator.type = 'sine'
-      oscillator.frequency.setValueAtTime(frequency, now)
-      gainNode.gain.setValueAtTime(0.0001, now)
-      gainNode.gain.exponentialRampToValueAtTime(0.14, now + 0.03 + index * 0.12)
-      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.18 + index * 0.12)
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(frequency, now);
+        gainNode.gain.setValueAtTime(0.0001, now);
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.14,
+          now + 0.03 + index * 0.12,
+        );
+        gainNode.gain.exponentialRampToValueAtTime(
+          0.0001,
+          now + 0.18 + index * 0.12,
+        );
 
-      oscillator.connect(gainNode)
-      gainNode.connect(audioContext.destination)
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
-      oscillator.start(now + index * 0.12)
-      oscillator.stop(now + 0.22 + index * 0.12)
-    })
-  }, [ensureAudioContext])
+        oscillator.start(now + index * 0.12);
+        oscillator.stop(now + 0.22 + index * 0.12);
+      });
+    },
+    [ensureAudioContext],
+  );
 
-  const playCountdownTick = useCallback(async (remainingSeconds) => {
-    const audioContext = await ensureAudioContext()
+  const playCountdownTick = useCallback(
+    async (remainingSeconds) => {
+      const audioContext = await ensureAudioContext();
 
-    if (!audioContext) {
-      return
-    }
+      if (!audioContext) {
+        return;
+      }
 
-    const now = audioContext.currentTime
-    const oscillator = audioContext.createOscillator()
-    const gainNode = audioContext.createGain()
-    const frequency = remainingSeconds === 1 ? 1046.5 : 880
+      const now = audioContext.currentTime;
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      const frequency = remainingSeconds === 1 ? 1046.5 : 880;
 
-    oscillator.type = 'triangle'
-    oscillator.frequency.setValueAtTime(frequency, now)
-    gainNode.gain.setValueAtTime(0.0001, now)
-    gainNode.gain.exponentialRampToValueAtTime(0.16, now + 0.01)
-    gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.11)
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(frequency, now);
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.16, now + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.11);
 
-    oscillator.connect(gainNode)
-    gainNode.connect(audioContext.destination)
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
 
-    oscillator.start(now)
-    oscillator.stop(now + 0.13)
-  }, [ensureAudioContext])
+      oscillator.start(now);
+      oscillator.stop(now + 0.13);
+    },
+    [ensureAudioContext],
+  );
 
   const triggerFinalMinuteBurst = useCallback(() => {
-    const sessionKey = `${mode}-${totalSeconds}`
+    const sessionKey = `${mode}-${totalSeconds}`;
 
     if (finalMinuteBurstSessionRef.current === sessionKey) {
-      return
+      return;
     }
 
-    finalMinuteBurstSessionRef.current = sessionKey
-    setFinalMinuteBurst(true)
+    finalMinuteBurstSessionRef.current = sessionKey;
+    setFinalMinuteBurst(true);
 
     if (finalMinuteBurstTimeoutRef.current) {
-      window.clearTimeout(finalMinuteBurstTimeoutRef.current)
+      window.clearTimeout(finalMinuteBurstTimeoutRef.current);
     }
 
     finalMinuteBurstTimeoutRef.current = window.setTimeout(() => {
-      setFinalMinuteBurst(false)
-    }, 2200)
-  }, [mode, totalSeconds])
+      setFinalMinuteBurst(false);
+    }, 2200);
+  }, [mode, totalSeconds]);
 
   useEffect(() => {
     if (!isRunning) {
-      return undefined
+      return undefined;
     }
 
     const intervalId = window.setInterval(() => {
       setSecondsLeft((currentSeconds) => {
-        const nextSeconds = Math.max(currentSeconds - 1, 0)
+        const nextSeconds = Math.max(currentSeconds - 1, 0);
 
         if (nextSeconds === 60) {
-          triggerFinalMinuteBurst()
+          triggerFinalMinuteBurst();
         }
 
-        return nextSeconds
-      })
-    }, 1000)
+        return nextSeconds;
+      });
+    }, 1000);
 
     return () => {
-      window.clearInterval(intervalId)
-    }
-  }, [isRunning, triggerFinalMinuteBurst])
+      window.clearInterval(intervalId);
+    };
+  }, [isRunning, triggerFinalMinuteBurst]);
 
   useEffect(() => {
     if (secondsLeft !== 0) {
-      return
+      return;
     }
 
-    const nextMode = mode === 'focus' ? 'break' : 'focus'
-    const nextCompletedSessions = mode === 'focus' ? completedSessions + 1 : completedSessions
-    const nextBreakType = nextMode === 'break' ? getBreakTypeForSession(nextCompletedSessions) : 'short'
+    const nextMode = mode === "focus" ? "break" : "focus";
+    const nextCompletedSessions =
+      mode === "focus" ? completedSessions + 1 : completedSessions;
+    const nextBreakType =
+      nextMode === "break"
+        ? getBreakTypeForSession(nextCompletedSessions)
+        : "short";
 
     startTransition(() => {
-      setMode(nextMode)
-      setCurrentBreakType(nextBreakType)
-      setSecondsLeft(getDurationForMode(nextMode, nextBreakType) * 60)
-      setIsRunning(true)
-      playTransitionSound(nextMode)
+      setMode(nextMode);
+      setCurrentBreakType(nextBreakType);
+      setSecondsLeft(getDurationForMode(nextMode, nextBreakType) * 60);
+      setIsRunning(true);
+      playTransitionSound(nextMode);
 
-      if (nextMode === 'break') {
-        setCompletedSessions(nextCompletedSessions)
-        trackEvent('pomodoro_session_complete', {
+      if (nextMode === "break") {
+        setCompletedSessions(nextCompletedSessions);
+        trackEvent("pomodoro_session_complete", {
           completed_mode: mode,
           next_mode: nextMode,
           focus_minutes: durations.focus,
           break_minutes: durations.break,
           long_break_minutes: durations.longBreak,
           break_type: nextBreakType,
-        })
+        });
       }
-    })
+    });
   }, [
     completedSessions,
     durations,
@@ -466,161 +520,171 @@ function App() {
     mode,
     playTransitionSound,
     secondsLeft,
-  ])
+  ]);
 
   useEffect(() => {
     if (!isRunning || secondsLeft > 5 || secondsLeft <= 0) {
-      lastCountdownTickRef.current = null
-      return
+      lastCountdownTickRef.current = null;
+      return;
     }
 
     if (lastCountdownTickRef.current === secondsLeft) {
-      return
+      return;
     }
 
-    lastCountdownTickRef.current = secondsLeft
-    playCountdownTick(secondsLeft)
-  }, [isRunning, playCountdownTick, secondsLeft])
+    lastCountdownTickRef.current = secondsLeft;
+    playCountdownTick(secondsLeft);
+  }, [isRunning, playCountdownTick, secondsLeft]);
 
   useEffect(() => {
     if (!isRunning || secondsLeft > 60) {
-      finalMinuteBurstSessionRef.current = null
+      finalMinuteBurstSessionRef.current = null;
     }
-  }, [isRunning, secondsLeft])
+  }, [isRunning, secondsLeft]);
 
   useEffect(() => {
     if (alwaysShowMenu) {
       if (hideMenuTimeoutRef.current) {
-        window.clearTimeout(hideMenuTimeoutRef.current)
+        window.clearTimeout(hideMenuTimeoutRef.current);
       }
-      return undefined
+      return undefined;
     }
 
     if (settingsOpen) {
       if (hideMenuTimeoutRef.current) {
-        window.clearTimeout(hideMenuTimeoutRef.current)
+        window.clearTimeout(hideMenuTimeoutRef.current);
       }
-      return undefined
+      return undefined;
     }
 
-    scheduleMenuHide()
+    scheduleMenuHide();
 
-    const events = ['pointermove', 'pointerdown', 'touchstart', 'keydown', 'focusin']
+    const events = [
+      "pointermove",
+      "pointerdown",
+      "touchstart",
+      "keydown",
+      "focusin",
+    ];
     const handleActivity = () => {
-      setShowMenu(true)
-      scheduleMenuHide()
-    }
+      setShowMenu(true);
+      scheduleMenuHide();
+    };
 
     events.forEach((eventName) => {
-      window.addEventListener(eventName, handleActivity, { passive: true })
-    })
+      window.addEventListener(eventName, handleActivity, { passive: true });
+    });
 
     return () => {
       events.forEach((eventName) => {
-        window.removeEventListener(eventName, handleActivity)
-      })
+        window.removeEventListener(eventName, handleActivity);
+      });
 
       if (hideMenuTimeoutRef.current) {
-        window.clearTimeout(hideMenuTimeoutRef.current)
+        window.clearTimeout(hideMenuTimeoutRef.current);
       }
-    }
-  }, [alwaysShowMenu, scheduleMenuHide, settingsOpen])
+    };
+  }, [alwaysShowMenu, scheduleMenuHide, settingsOpen]);
 
   const syncDuration = (targetMode, rawValue) => {
-    const nextMinutes = clampMinutes(rawValue, durations[targetMode])
+    const nextMinutes = clampMinutes(rawValue, durations[targetMode]);
 
     setDurations((currentDurations) => ({
       ...currentDurations,
       [targetMode]: nextMinutes,
-    }))
+    }));
 
     if (
-      (mode === targetMode && targetMode !== 'break') ||
-      (mode === 'break' &&
-        ((targetMode === 'break' && currentBreakType === 'short') ||
-          (targetMode === 'longBreak' && currentBreakType === 'long')))
+      (mode === targetMode && targetMode !== "break") ||
+      (mode === "break" &&
+        ((targetMode === "break" && currentBreakType === "short") ||
+          (targetMode === "longBreak" && currentBreakType === "long")))
     ) {
-      setSecondsLeft(nextMinutes * 60)
+      setSecondsLeft(nextMinutes * 60);
     }
 
-    trackEvent('pomodoro_duration_change', {
+    trackEvent("pomodoro_duration_change", {
       timer_mode: targetMode,
       duration_minutes: nextMinutes,
-    })
-  }
+    });
+  };
 
   const switchMode = (nextMode) => {
-    revealMenu()
-    setFinalMinuteBurst(false)
-    finalMinuteBurstSessionRef.current = null
-    setMode(nextMode)
-    if (nextMode === 'focus') {
-      setCurrentBreakType('short')
+    revealMenu();
+    setFinalMinuteBurst(false);
+    finalMinuteBurstSessionRef.current = null;
+    setMode(nextMode);
+    if (nextMode === "focus") {
+      setCurrentBreakType("short");
     }
-    setIsRunning(false)
-    setSecondsLeft(getDurationForMode(nextMode))
-    trackEvent('pomodoro_mode_switch', {
+    setIsRunning(false);
+    setSecondsLeft(getDurationForMode(nextMode));
+    trackEvent("pomodoro_mode_switch", {
       from_mode: mode,
       to_mode: nextMode,
-    })
-  }
+    });
+  };
 
   const toggleTimer = async () => {
-    await ensureAudioContext()
-    revealMenu()
+    await ensureAudioContext();
+    revealMenu();
     if (!isRunning && secondsLeft === 60) {
-      triggerFinalMinuteBurst()
+      triggerFinalMinuteBurst();
     }
-    trackEvent('pomodoro_timer_toggle', {
-      action: isRunning ? 'pause' : 'start',
+    trackEvent("pomodoro_timer_toggle", {
+      action: isRunning ? "pause" : "start",
       timer_mode: mode,
       seconds_left: secondsLeft,
-    })
-    setIsRunning((currentValue) => !currentValue)
-  }
+    });
+    setIsRunning((currentValue) => !currentValue);
+  };
 
   const resetTimer = async () => {
-    await ensureAudioContext()
-    revealMenu()
-    setFinalMinuteBurst(false)
-    finalMinuteBurstSessionRef.current = null
-    setIsRunning(false)
-    setMode('focus')
-    setCurrentBreakType('short')
-    setSecondsLeft(durations.focus * 60)
-    setCompletedSessions(0)
-    trackEvent('pomodoro_timer_reset', {
+    await ensureAudioContext();
+    revealMenu();
+    setFinalMinuteBurst(false);
+    finalMinuteBurstSessionRef.current = null;
+    setIsRunning(false);
+    setMode("focus");
+    setCurrentBreakType("short");
+    setSecondsLeft(durations.focus * 60);
+    setCompletedSessions(0);
+    trackEvent("pomodoro_timer_reset", {
       timer_mode: mode,
       completed_sessions: completedSessions,
-    })
-  }
+    });
+  };
 
   const skipSession = async () => {
-    await ensureAudioContext()
-    revealMenu()
-    setFinalMinuteBurst(false)
-    finalMinuteBurstSessionRef.current = null
+    await ensureAudioContext();
+    revealMenu();
+    setFinalMinuteBurst(false);
+    finalMinuteBurstSessionRef.current = null;
 
-    const nextMode = mode === 'focus' ? 'break' : 'focus'
-    const nextCompletedSessions = mode === 'focus' ? completedSessions + 1 : completedSessions
-    const nextBreakType = nextMode === 'break' ? getBreakTypeForSession(nextCompletedSessions) : 'short'
+    const nextMode = mode === "focus" ? "break" : "focus";
+    const nextCompletedSessions =
+      mode === "focus" ? completedSessions + 1 : completedSessions;
+    const nextBreakType =
+      nextMode === "break"
+        ? getBreakTypeForSession(nextCompletedSessions)
+        : "short";
 
-    setMode(nextMode)
-    setCurrentBreakType(nextBreakType)
-    setSecondsLeft(getDurationForMode(nextMode, nextBreakType) * 60)
-    setIsRunning(false)
-    playTransitionSound(nextMode)
-    trackEvent('pomodoro_session_skip', {
+    setMode(nextMode);
+    setCurrentBreakType(nextBreakType);
+    setSecondsLeft(getDurationForMode(nextMode, nextBreakType) * 60);
+    setIsRunning(false);
+    playTransitionSound(nextMode);
+    trackEvent("pomodoro_session_skip", {
       skipped_mode: mode,
       next_mode: nextMode,
       seconds_left: secondsLeft,
       break_type: nextBreakType,
-    })
+    });
 
-    if (nextMode === 'break') {
-      setCompletedSessions(nextCompletedSessions)
+    if (nextMode === "break") {
+      setCompletedSessions(nextCompletedSessions);
     }
-  }
+  };
 
   return (
     <main
@@ -629,13 +693,21 @@ function App() {
       <div className="mx-auto flex min-h-[calc(90dvh-9rem)] w-full max-w-3xl flex-col">
         <header
           className={`flex items-center justify-between transition-all duration-300 ${
-            menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
+            menuVisible
+              ? "translate-y-0 opacity-100"
+              : "-translate-y-2 opacity-0 pointer-events-none"
           }`}
         >
           <div className="flex items-center gap-3">
-            <img src={logo} alt="Pomodoro logo" className="h-11 w-11 rounded-2xl" />
+            <img
+              src={logo}
+              alt="Pomodoro logo"
+              className="h-11 w-11 rounded-2xl"
+            />
             <div className="flex flex-col justify-center">
-              <p className="text-xs uppercase tracking-[0.3em] leading-none text-stone-400">Pomodoro</p>
+              <p className="text-xs uppercase tracking-[0.3em] leading-none text-stone-400">
+                Pomodoro
+              </p>
               <h1 className="mt-1 font-['Space_Grotesk',_'Noto_Sans_JP',_sans-serif] text-2xl leading-none font-medium">
                 ポモドーロタイマー
               </h1>
@@ -644,11 +716,11 @@ function App() {
           <button
             type="button"
             onClick={() => {
-              revealMenu()
-              setSettingsOpen((currentValue) => !currentValue)
-              trackEvent('pomodoro_settings_toggle', {
+              revealMenu();
+              setSettingsOpen((currentValue) => !currentValue);
+              trackEvent("pomodoro_settings_toggle", {
                 is_open: !settingsOpen,
-              })
+              });
             }}
             className="rounded-full border border-stone-300 bg-white px-4 py-2 text-sm text-stone-600 transition hover:border-stone-400 hover:text-stone-900"
           >
@@ -659,11 +731,13 @@ function App() {
         <section className="flex flex-1 flex-col items-center justify-center">
           <div
             className={`mb-10 flex items-center gap-2 rounded-full border border-stone-200 bg-white p-1 transition-all duration-300 ${
-              menuVisible ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0 pointer-events-none'
+              menuVisible
+                ? "translate-y-0 opacity-100"
+                : "-translate-y-2 opacity-0 pointer-events-none"
             }`}
           >
             {Object.entries(MODES).map(([key, value]) => {
-              const isActive = mode === key
+              const isActive = mode === key;
 
               return (
                 <button
@@ -671,12 +745,14 @@ function App() {
                   type="button"
                   onClick={() => switchMode(key)}
                   className={`rounded-full px-4 py-2 text-sm transition ${
-                    isActive ? 'bg-stone-900 text-white' : 'text-stone-500 hover:text-stone-900'
+                    isActive
+                      ? "bg-stone-900 text-white"
+                      : "text-stone-500 hover:text-stone-900"
                   }`}
                 >
                   {value.label}
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -691,8 +767,19 @@ function App() {
                 <span className="cinema-particle cinema-particle-6" />
               </div>
             ) : null}
-            <svg className="absolute inset-[-12%] h-[124%] w-[124%] -rotate-90 overflow-visible" viewBox="0 0 320 320" aria-hidden="true">
-              <circle cx="160" cy="160" r={circleRadius} fill="none" stroke="#e7e5e4" strokeWidth="12" />
+            <svg
+              className="absolute inset-[-12%] h-[124%] w-[124%] -rotate-90 overflow-visible"
+              viewBox="0 0 320 320"
+              aria-hidden="true"
+            >
+              <circle
+                cx="160"
+                cy="160"
+                r={circleRadius}
+                fill="none"
+                stroke="#e7e5e4"
+                strokeWidth="12"
+              />
               {finalMinuteBurst ? (
                 <>
                   <circle
@@ -740,22 +827,30 @@ function App() {
                 strokeLinecap="round"
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeOffset}
-                className={`transition-[stroke-dashoffset] duration-700 ${finalMinuteBurst ? 'countdown-ring-burst' : ''}`}
+                className={`transition-[stroke-dashoffset] duration-700 ${finalMinuteBurst ? "countdown-ring-burst" : ""}`}
               />
             </svg>
 
-            <div className={`flex h-[220px] w-[220px] flex-col items-center justify-center rounded-full text-center shadow-[0_18px_50px_rgba(28,25,23,0.08)] transition-colors duration-700 sm:h-[244px] sm:w-[244px] ${activeMode.panel}`}>
-              <p className="text-sm uppercase tracking-[0.28em] text-stone-400">{activeMode.helper}</p>
+            <div
+              className={`flex h-[220px] w-[220px] flex-col items-center justify-center rounded-full text-center shadow-[0_18px_50px_rgba(28,25,23,0.08)] transition-colors duration-700 sm:h-[244px] sm:w-[244px] ${activeMode.panel}`}
+            >
+              <p className="text-sm uppercase tracking-[0.28em] text-stone-400">
+                {activeMode.helper}
+              </p>
               <p className="mt-3 font-['Space_Grotesk',_'Noto_Sans_JP',_sans-serif] text-5xl font-medium tracking-tight tabular-nums sm:text-6xl">
                 {formatTime(secondsLeft)}
               </p>
-              <p className="mt-3 text-sm text-stone-400">Completed {completedSessions}</p>
+              <p className="mt-3 text-sm text-stone-400">
+                Completed {completedSessions}
+              </p>
             </div>
           </div>
 
           <div
             className={`mt-7 flex flex-wrap items-center justify-center gap-3 transition-all duration-300 ${
-              menuVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 pointer-events-none'
+              menuVisible
+                ? "translate-y-0 opacity-100"
+                : "translate-y-2 opacity-0 pointer-events-none"
             }`}
           >
             <button
@@ -763,7 +858,7 @@ function App() {
               onClick={toggleTimer}
               className="min-w-28 rounded-full bg-stone-900 px-6 py-3 text-sm font-medium text-white transition hover:bg-stone-700"
             >
-              {isRunning ? 'Pause' : 'Start'}
+              {isRunning ? "Pause" : "Start"}
             </button>
             <button
               type="button"
@@ -783,17 +878,19 @@ function App() {
         </section>
 
         {settingsOpen ? (
-          <section className={`mx-auto mt-6 w-full max-w-xl rounded-[1.5rem] border border-stone-200 p-5 shadow-[0_18px_40px_rgba(28,25,23,0.06)] transition-all duration-300 ${activeMode.panel} ${menuVisible ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0 pointer-events-none'}`}>
+          <section
+            className={`mx-auto mt-6 w-full max-w-xl rounded-[1.5rem] border border-stone-200 p-5 shadow-[0_18px_40px_rgba(28,25,23,0.06)] transition-all duration-300 ${activeMode.panel} ${menuVisible ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0 pointer-events-none"}`}
+          >
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-medium text-stone-900">Settings</h2>
               <button
                 type="button"
                 onClick={() => {
-                  revealMenu()
-                  setSettingsOpen(false)
-                  trackEvent('pomodoro_settings_toggle', {
+                  revealMenu();
+                  setSettingsOpen(false);
+                  trackEvent("pomodoro_settings_toggle", {
                     is_open: false,
-                  })
+                  });
                 }}
                 className="text-sm text-stone-400 transition hover:text-stone-700"
               >
@@ -808,8 +905,8 @@ function App() {
                 min={1}
                 max={90}
                 onSelect={(value) => {
-                  revealMenu()
-                  syncDuration('focus', value)
+                  revealMenu();
+                  syncDuration("focus", value);
                 }}
               />
               <ChoiceGroup
@@ -818,8 +915,8 @@ function App() {
                 min={1}
                 max={90}
                 onSelect={(value) => {
-                  revealMenu()
-                  syncDuration('break', value)
+                  revealMenu();
+                  syncDuration("break", value);
                 }}
               />
             </div>
@@ -827,19 +924,23 @@ function App() {
             <div className="mt-4 flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-stone-900">長時間休憩</p>
-                <p className="text-sm text-stone-500">一定回数ごとの休憩を長めにします</p>
+                <p className="text-sm text-stone-500">
+                  一定回数ごとの休憩を長めにします
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  revealMenu()
-                  setLongBreakEnabled((currentValue) => !currentValue)
+                  revealMenu();
+                  setLongBreakEnabled((currentValue) => !currentValue);
                 }}
                 className={`rounded-full px-4 py-2 text-sm transition ${
-                  longBreakEnabled ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
+                  longBreakEnabled
+                    ? "bg-stone-900 text-white"
+                    : "bg-white text-stone-500 ring-1 ring-stone-300"
                 }`}
               >
-                {longBreakEnabled ? 'On' : 'Off'}
+                {longBreakEnabled ? "On" : "Off"}
               </button>
             </div>
 
@@ -851,8 +952,8 @@ function App() {
                 max={90}
                 disabled={!longBreakEnabled}
                 onSelect={(value) => {
-                  revealMenu()
-                  syncDuration('longBreak', value)
+                  revealMenu();
+                  syncDuration("longBreak", value);
                 }}
               />
 
@@ -864,10 +965,10 @@ function App() {
                 max={12}
                 disabled={!longBreakEnabled}
                 onSelect={(value) => {
-                  revealMenu()
+                  revealMenu();
                   setLongBreakInterval((currentValue) =>
                     clampLongBreakInterval(value, currentValue),
-                  )
+                  );
                 }}
               />
             </div>
@@ -875,44 +976,54 @@ function App() {
             <div className="mt-4 flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
               <div>
                 <p className="text-sm font-medium text-stone-900">通知音</p>
-                <p className="text-sm text-stone-500">作業と休憩の切り替え時に再生</p>
+                <p className="text-sm text-stone-500">
+                  作業と休憩の切り替え時に再生
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  revealMenu()
-                  setAudioEnabled((currentValue) => !currentValue)
-                  trackEvent('pomodoro_audio_toggle', {
+                  revealMenu();
+                  setAudioEnabled((currentValue) => !currentValue);
+                  trackEvent("pomodoro_audio_toggle", {
                     enabled: !audioEnabled,
-                  })
+                  });
                 }}
                 className={`rounded-full px-4 py-2 text-sm transition ${
-                  audioEnabled ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
+                  audioEnabled
+                    ? "bg-stone-900 text-white"
+                    : "bg-white text-stone-500 ring-1 ring-stone-300"
                 }`}
               >
-                {audioEnabled ? 'On' : 'Off'}
+                {audioEnabled ? "On" : "Off"}
               </button>
             </div>
 
             <div className="mt-4 flex items-center justify-between rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-stone-900">メニュー表示</p>
-                <p className="text-sm text-stone-500">自動で隠さず、常に表示したままにします</p>
+                <p className="text-sm font-medium text-stone-900">
+                  メニュー表示
+                </p>
+                <p className="text-sm text-stone-500">
+                  自動で隠さず、常に表示したままにします
+                </p>
               </div>
               <button
                 type="button"
                 onClick={() => {
-                  revealMenu()
-                  setAlwaysShowMenu((currentValue) => !currentValue)
-                  trackEvent('pomodoro_menu_visibility_toggle', {
+                  revealMenu();
+                  setAlwaysShowMenu((currentValue) => !currentValue);
+                  trackEvent("pomodoro_menu_visibility_toggle", {
                     always_show: !alwaysShowMenu,
-                  })
+                  });
                 }}
                 className={`rounded-full px-4 py-2 text-sm transition ${
-                  alwaysShowMenu ? 'bg-stone-900 text-white' : 'bg-white text-stone-500 ring-1 ring-stone-300'
+                  alwaysShowMenu
+                    ? "bg-stone-900 text-white"
+                    : "bg-white text-stone-500 ring-1 ring-stone-300"
                 }`}
               >
-                {alwaysShowMenu ? 'Always on' : 'Auto hide'}
+                {alwaysShowMenu ? "Always on" : "Auto hide"}
               </button>
             </div>
           </section>
@@ -922,6 +1033,7 @@ function App() {
       <div className="mx-auto mt-8 w-full max-w-3xl px-6 pb-3 sm:mt-10">
         <div className="mb-4 h-px w-full" />
         <div className="flex justify-center">
+          
           <AdBanner />
         </div>
         <footer className="pt-3 text-center text-xs text-stone-400">
@@ -929,7 +1041,7 @@ function App() {
         </footer>
       </div>
     </main>
-  )
+  );
 }
 
-export default App
+export default App;
