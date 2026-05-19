@@ -1037,75 +1037,130 @@ function App() {
         <div className="flex justify-center">
           <AdBanner />
         </div>
-        <section className="mx-auto mt-10 grid gap-6 border-t border-stone-200 pt-8 text-left text-stone-700 sm:grid-cols-3">
-          <div className="sm:col-span-1">
-            <h2 className="text-base font-semibold text-stone-900">
+        <section className="mx-auto mt-10 overflow-hidden rounded-3xl border border-stone-200 bg-white/78 text-left shadow-[0_18px_50px_rgba(28,25,23,0.06)] backdrop-blur">
+          <div className="border-b border-stone-200 bg-stone-50/80 px-5 py-6 sm:px-8">
+            <p className="text-xs font-medium uppercase tracking-[0.22em] text-orange-500">
+              Focus routine
+            </p>
+            <h2 className="mt-2 text-xl font-semibold leading-8 text-stone-900 sm:text-2xl">
               集中を続けるための無料ポモドーロタイマー
             </h2>
-            <p className="mt-3 text-sm leading-7">
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-stone-600">
               作業、勉強、読書、家事などに使えるブラウザ型の集中タイマーです。
-              作業時間と休憩時間を切り替えながら、無理なく集中のリズムを作れます。
+              作業時間と休憩時間をやさしく切り替えながら、今日のタスクに合ったリズムを整えられます。
             </p>
           </div>
-          <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
-            <section>
+
+          <div className="grid gap-0 divide-y divide-stone-200 sm:grid-cols-2 sm:divide-x sm:divide-y-0">
+            <div className="p-5 sm:p-8">
               <h3 className="text-sm font-semibold text-stone-900">
-                時間を自由に設定
+                こんな作業におすすめ
               </h3>
-              <p className="mt-2 text-sm leading-7">
-                25分作業・5分休憩の基本スタイルはもちろん、作業内容に合わせて分数を変更できます。
-              </p>
-            </section>
-            <section>
-              <h3 className="text-sm font-semibold text-stone-900">
-                長めの休憩にも対応
-              </h3>
-              <p className="mt-2 text-sm leading-7">
-                一定回数ごとに長時間休憩を入れられるため、長い作業でも疲れをためにくくなります。
-              </p>
-            </section>
-            <section>
-              <h3 className="text-sm font-semibold text-stone-900">
-                ブラウザですぐ使える
-              </h3>
-              <p className="mt-2 text-sm leading-7">
-                インストール不要で、PCやスマートフォンのブラウザからすぐに使えます。
-              </p>
-            </section>
-            <section>
-              <h3 className="text-sm font-semibold text-stone-900">
-                設定を保存
-              </h3>
-              <p className="mt-2 text-sm leading-7">
-                作業時間、休憩時間、通知音などの設定はブラウザに保存され、次回も同じリズムで始められます。
-              </p>
-            </section>
-          </div>
-        </section>
-        <section className="mx-auto mt-8 border-t border-stone-200 pt-8 text-left text-stone-700">
-          <h2 className="text-base font-semibold text-stone-900">
-            よくある質問
-          </h2>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2">
-            <div>
-              <h3 className="text-sm font-semibold text-stone-900">
-                ポモドーロタイマーとは何ですか？
-              </h3>
-              <p className="mt-2 text-sm leading-7">
-                作業時間と短い休憩を繰り返し、集中と休息のメリハリを作るためのタイマーです。
-              </p>
+              <div className="mt-5 grid gap-3">
+                {[
+                  "勉強や資格学習を短い集中時間に区切りたい",
+                  "仕事のタスクを始めるきっかけがほしい",
+                  "読書や執筆を休憩込みで続けたい",
+                ].map((item) => (
+                  <div key={item} className="flex gap-3">
+                    <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-orange-400" />
+                    <p className="text-sm leading-7 text-stone-600">{item}</p>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div>
+
+            <div className="p-5 sm:p-8">
               <h3 className="text-sm font-semibold text-stone-900">
-                勉強にも使えますか？
+                基本の使い方
               </h3>
-              <p className="mt-2 text-sm leading-7">
-                使えます。暗記、読書、レポート作成など、時間を区切ると進めやすい作業に向いています。
-              </p>
+              <div className="mt-5 grid gap-4">
+                {[
+                  ["01", "作業時間を決める"],
+                  ["02", "Startを押して集中する"],
+                  ["03", "休憩でリズムを整える"],
+                ].map(([step, label]) => (
+                  <div key={step} className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-stone-900 font-['Space_Grotesk',_'Noto_Sans_JP',_sans-serif] text-xs text-white">
+                      {step}
+                    </span>
+                    <p className="text-sm font-medium text-stone-700">
+                      {label}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+
+          <div className="grid gap-3 border-t border-stone-200 bg-white p-5 sm:grid-cols-4 sm:p-6">
+            {[
+              ["時間を自由に設定", "作業時間、休憩時間、長めの休憩時間を変更できます。"],
+              ["長めの休憩に対応", "一定回数ごとに長時間休憩を入れられます。"],
+              ["ブラウザですぐ使える", "インストール不要でPCやスマートフォンから使えます。"],
+              ["設定を保存", "次回も同じリズムで始められるよう設定を保存します。"],
+            ].map(([title, body]) => (
+              <section
+                key={title}
+                className="rounded-2xl border border-stone-200 bg-stone-50/70 p-4"
+              >
+                <h3 className="text-sm font-semibold text-stone-900">
+                  {title}
+                </h3>
+                <p className="mt-2 text-xs leading-6 text-stone-500">{body}</p>
+              </section>
+            ))}
+          </div>
         </section>
-        <footer className="pt-3 text-center text-xs text-stone-400">
+
+        <section className="mx-auto mt-6 rounded-3xl border border-stone-200 bg-white/72 p-5 text-left shadow-[0_14px_38px_rgba(28,25,23,0.045)] sm:p-8">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-[0.22em] text-teal-600">
+                FAQ
+              </p>
+              <h2 className="mt-2 text-lg font-semibold text-stone-900">
+                よくある質問
+              </h2>
+            </div>
+            <p className="text-sm leading-7 text-stone-500">
+              はじめて使うときに気になりやすい点をまとめました。
+            </p>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {[
+              [
+                "ポモドーロタイマーはどんな使い方に向いていますか？",
+                "作業や勉強を一定時間に区切り、短い休憩を挟みながら集中を続けたいときに向いています。長時間まとめて頑張るより、始めやすく疲れをためにくいリズムを作れます。",
+              ],
+              [
+                "25分以外の時間でも使えますか？",
+                "使えます。作業時間、短い休憩、長めの休憩は自由に変更できるため、15分だけ集中したい日や、長めの作業に合わせたい日にも調整できます。",
+              ],
+              [
+                "休憩時間はどのくらいがおすすめですか？",
+                "まずは作業25分に対して休憩5分を目安にすると始めやすいです。集中が切れやすい場合は作業時間を短くし、疲れを感じる場合は休憩を少し長めに調整してください。",
+              ],
+              [
+                "設定は毎回やり直す必要がありますか？",
+                "作業時間、休憩時間、通知音、長めの休憩などの設定はブラウザに保存されます。同じ端末とブラウザであれば、次回も前回の設定で始められます。",
+              ],
+            ].map(([question, answer]) => (
+              <div
+                key={question}
+                className="rounded-2xl border border-stone-200 bg-stone-50/70 p-5"
+              >
+                <h3 className="text-sm font-semibold leading-6 text-stone-900">
+                  {question}
+                </h3>
+                <p className="mt-2 text-sm leading-7 text-stone-600">
+                  {answer}
+                </p>
+              </div>
+            ))}
+          </div>
+        </section>
+        <footer className="pt-5 text-center text-xs text-stone-400">
           ©︎ 2026 Himawari Project
         </footer>
       </div>
