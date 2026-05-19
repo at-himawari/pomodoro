@@ -1,0 +1,19 @@
+{
+  "name": "ポモドーロタイマー",
+  "short_name": "Pomodoro",
+  "description": "作業時間と休憩時間を切り替えて集中を続けられる無料のポモドーロタイマー。",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f5f5f4",
+  "theme_color": "#f97316",
+  "lang": "ja-JP",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

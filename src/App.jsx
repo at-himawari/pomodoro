@@ -327,7 +327,7 @@ function App() {
   }, [activeMode.surface]);
 
   useEffect(() => {
-    document.title = `ポモドーロタイマー | ${activeMode.helper}`;
+    document.title = `ポモドーロタイマー｜${activeMode.helper}｜無料の集中・休憩タイマー`;
   }, [activeMode.helper]);
 
   const scheduleMenuHide = useCallback(() => {
@@ -1037,6 +1037,74 @@ function App() {
         <div className="flex justify-center">
           <AdBanner />
         </div>
+        <section className="mx-auto mt-10 grid gap-6 border-t border-stone-200 pt-8 text-left text-stone-700 sm:grid-cols-3">
+          <div className="sm:col-span-1">
+            <h2 className="text-base font-semibold text-stone-900">
+              集中を続けるための無料ポモドーロタイマー
+            </h2>
+            <p className="mt-3 text-sm leading-7">
+              作業、勉強、読書、家事などに使えるブラウザ型の集中タイマーです。
+              作業時間と休憩時間を切り替えながら、無理なく集中のリズムを作れます。
+            </p>
+          </div>
+          <div className="grid gap-4 sm:col-span-2 sm:grid-cols-2">
+            <section>
+              <h3 className="text-sm font-semibold text-stone-900">
+                時間を自由に設定
+              </h3>
+              <p className="mt-2 text-sm leading-7">
+                25分作業・5分休憩の基本スタイルはもちろん、作業内容に合わせて分数を変更できます。
+              </p>
+            </section>
+            <section>
+              <h3 className="text-sm font-semibold text-stone-900">
+                長めの休憩にも対応
+              </h3>
+              <p className="mt-2 text-sm leading-7">
+                一定回数ごとに長時間休憩を入れられるため、長い作業でも疲れをためにくくなります。
+              </p>
+            </section>
+            <section>
+              <h3 className="text-sm font-semibold text-stone-900">
+                ブラウザですぐ使える
+              </h3>
+              <p className="mt-2 text-sm leading-7">
+                インストール不要で、PCやスマートフォンのブラウザからすぐに使えます。
+              </p>
+            </section>
+            <section>
+              <h3 className="text-sm font-semibold text-stone-900">
+                設定を保存
+              </h3>
+              <p className="mt-2 text-sm leading-7">
+                作業時間、休憩時間、通知音などの設定はブラウザに保存され、次回も同じリズムで始められます。
+              </p>
+            </section>
+          </div>
+        </section>
+        <section className="mx-auto mt-8 border-t border-stone-200 pt-8 text-left text-stone-700">
+          <h2 className="text-base font-semibold text-stone-900">
+            よくある質問
+          </h2>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2">
+            <div>
+              <h3 className="text-sm font-semibold text-stone-900">
+                ポモドーロタイマーとは何ですか？
+              </h3>
+              <p className="mt-2 text-sm leading-7">
+                作業時間と短い休憩を繰り返し、集中と休息のメリハリを作るためのタイマーです。
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-stone-900">
+                勉強にも使えますか？
+              </h3>
+              <p className="mt-2 text-sm leading-7">
+                使えます。暗記、読書、レポート作成など、時間を区切ると進めやすい作業に向いています。
+              </p>
+            </div>
+          </div>
+        </section>
         <footer className="pt-3 text-center text-xs text-stone-400">
           ©︎ 2026 Himawari Project
         </footer>

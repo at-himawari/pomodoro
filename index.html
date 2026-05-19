@@ -3,7 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href="https://pomodoro.at-himawari.com/" />
+    <link rel="manifest" href="/site.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f97316" />
+    <meta name="application-name" content="ポモドーロタイマー" />
+    <meta name="author" content="Himawari Project" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
     <meta
       name="description"
       content="作業時間と休憩時間を切り替えて集中を続けられる無料のポモドーロタイマー。集中・休憩・長めの休憩を設定して、ブラウザですぐ使えます。"
@@ -15,7 +24,10 @@
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pomodoro.at-himawari.com/" />
     <meta property="og:site_name" content="ポモドーロタイマー" />
-    <meta property="og:title" content="ポモドーロタイマー" />
+    <meta
+      property="og:title"
+      content="ポモドーロタイマー｜無料で使える集中・休憩タイマー"
+    />
     <meta
       property="og:description"
       content="作業時間と休憩時間を切り替えて集中を続けられる無料のポモドーロタイマー。集中・休憩・長めの休憩を設定して、ブラウザですぐ使えます。"
@@ -33,7 +45,10 @@
     <meta property="og:image:alt" content="ポモドーロタイマーのOGP画像" />
     <meta property="og:locale" content="ja_JP" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="ポモドーロタイマー" />
+    <meta
+      name="twitter:title"
+      content="ポモドーロタイマー｜無料で使える集中・休憩タイマー"
+    />
     <meta
       name="twitter:description"
       content="作業時間と休憩時間を切り替えて集中を続けられる無料のポモドーロタイマー。集中・休憩・長めの休憩を設定して、ブラウザですぐ使えます。"
@@ -43,7 +58,69 @@
       name="twitter:image"
       content="https://pomodoro.at-himawari.com/og-image.jpg?v=3"
     />
-    <title>ポモドーロタイマー</title>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://pomodoro.at-himawari.com/#website",
+            "url": "https://pomodoro.at-himawari.com/",
+            "name": "ポモドーロタイマー",
+            "inLanguage": "ja-JP",
+            "publisher": {
+              "@id": "https://pomodoro.at-himawari.com/#organization"
+            }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://pomodoro.at-himawari.com/#organization",
+            "name": "Himawari Project",
+            "url": "https://pomodoro.at-himawari.com/"
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://pomodoro.at-himawari.com/#app",
+            "url": "https://pomodoro.at-himawari.com/",
+            "name": "ポモドーロタイマー",
+            "applicationCategory": "ProductivityApplication",
+            "operatingSystem": "Any",
+            "browserRequirements": "Requires JavaScript",
+            "inLanguage": "ja-JP",
+            "isAccessibleForFree": true,
+            "description": "作業時間と休憩時間を切り替えて集中を続けられる無料のポモドーロタイマー。集中・休憩・長めの休憩を設定して、ブラウザですぐ使えます。",
+            "image": "https://pomodoro.at-himawari.com/og-image.jpg?v=3",
+            "publisher": {
+              "@id": "https://pomodoro.at-himawari.com/#organization"
+            }
+          },
+          {
+            "@type": "FAQPage",
+            "@id": "https://pomodoro.at-himawari.com/#faq",
+            "inLanguage": "ja-JP",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "ポモドーロタイマーとは何ですか？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "25分の作業と短い休憩を繰り返し、集中と休息のリズムを作るためのタイマーです。"
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "勉強にも使えますか？",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "暗記、読書、レポート作成など、時間を区切ると進めやすい作業に向いています。"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
+    <title>ポモドーロタイマー｜無料で使える集中・休憩タイマー</title>
     <script
       async
       src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6651283997191475"
@@ -52,6 +129,14 @@
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main>
+        <h1>ポモドーロタイマー</h1>
+        <p>
+          作業時間と休憩時間を切り替えて集中を続けるための無料タイマーです。タイマーを利用するにはJavaScriptを有効にしてください。
+        </p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
